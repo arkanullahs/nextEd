@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CourseForm from '../Teacher-Course-Form/TeacherCourseForm';
 import CourseCard from './CourseCard';
-import { FaPlus, FaChalkboardTeacher, FaBook, FaUsers, FaClock } from 'react-icons/fa';
+import { FaPlus, FaChalkboardTeacher, FaBook, FaUsers, FaClock, FaDollarSign } from 'react-icons/fa';
 import './TeacherDashboard.css';
 
 const TeacherDashboard = () => {
@@ -131,7 +131,7 @@ const TeacherDashboard = () => {
                         <div className="summary-item">
                             <FaUsers className="summary-icon" />
                             <div className="summary-info">
-                                <h3>{courses.reduce((sum, course) => sum + course.__v, 0)}</h3>
+                                <h3>{courses.reduce((sum, c) => sum + (c.enrolledStudents?.length || 0), 0)}</h3>
                                 <p>Total Students</p>
                             </div>
                         </div>
@@ -147,6 +147,13 @@ const TeacherDashboard = () => {
                             <div className="summary-info">
                                 <h3>{courses.reduce((sum, course) => sum + course.duration, 0)}</h3>
                                 <p>Total Hours</p>
+                            </div>
+                        </div>
+                        <div className="summary-item">
+                            <FaDollarSign className="summary-icon" />
+                            <div className="summary-info">
+                                <h3>{courses.reduce((sum, c) => sum + (c.price || 0) * (c.enrolledStudents?.length || 0), 0)}</h3>
+                                <p>Total Sold Amount</p>
                             </div>
                         </div>
                     </div>

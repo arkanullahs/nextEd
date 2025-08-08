@@ -107,7 +107,7 @@
 }
 
 .course-card-content {
-    padding: 0 16px 16px !important; /* force remove top gap under image */
+    padding: 13px 16px 16px !important; /* subtle breathing room under image */
 }
 
 /* Extra guard: collapse any accidental top margins from first child */

@@ -227,7 +227,7 @@
 .cd-comment { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
 .cd-comment.pending { opacity: 0.7; }
 .cd-comment-author { font-weight: 600; margin-bottom: 4px; }
-.cd-comment-status { color: #a16207; font-size: 12px; margin-top: 4px; }
+.cd-comment-status { color: #dc2626; font-size: 12px; margin-top: 4px; }
 .cd-role { color: #666; font-weight: 400; }
 
 .cd-loading-container {

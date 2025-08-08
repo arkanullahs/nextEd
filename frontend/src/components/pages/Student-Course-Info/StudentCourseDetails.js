@@ -155,13 +155,47 @@ const CourseDetails = () => {
                                 <p className="cd-muted">Comments may require admin approval before becoming visible to others.</p>
                             </div>
                             <ul className="cd-comment-list">
-                                {comments.map((c) => (
-                                    <li key={c._id} className={`cd-comment ${!c.isApproved ? 'pending' : ''}`}>
-                                        <div className="cd-comment-author">{c.author?.firstName} {c.author?.lastName} <span className="cd-role">({c.author?.role})</span></div>
-                                        <div className="cd-comment-content">{c.content}</div>
-                                        {!c.isApproved && <div className="cd-comment-status">Pending approval</div>}
-                                    </li>
-                                ))}
+                                {comments.map((c) => {
+                                    const isOwn = c.author && c.author._id === JSON.parse(atob(localStorage.getItem('token').split('.')[1]))._id;
+                                    return (
+                                        <li key={c._id} className={`cd-comment ${!c.isApproved ? 'pending' : ''}`}>
+                                            <div className="cd-comment-author">
+                                                {c.author?.firstName} {c.author?.lastName} <span className="cd-role">({c.author?.role})</span>
+                                                {isOwn && (
+                                                    <span style={{ float: 'right' }}>
+                                                        <button style={{ marginRight: 6 }} onClick={async () => {
+                                                            const content = prompt('Edit comment:', c.content);
+                                                            if (content == null) return;
+                                                            try {
+                                                                const token = localStorage.getItem('token');
+                                                                const res = await axios.put(`${apiUrl}/courses/${courseId}/comments/${c._id}`, { content }, {
+                                                                    headers: { 'x-auth-token': token }
+                                                                });
+                                                                setComments(prev => prev.map(x => x._id === c._id ? res.data : x));
+                                                            } catch (e) { /* ignore */ }
+                                                        }}>Edit</button>
+                                                        <button onClick={async () => {
+                                                            if (!window.confirm('Delete this comment?')) return;
+                                                            try {
+                                                                const token = localStorage.getItem('token');
+                                                                await axios.delete(`${apiUrl}/courses/${courseId}/comments/${c._id}`, {
+                                                                    headers: { 'x-auth-token': token }
+                                                                });
+                                                                setComments(prev => prev.filter(x => x._id !== c._id));
+                                                            } catch (e) { /* ignore */ }
+                                                        }}>Delete</button>
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="cd-comment-content">{c.content}</div>
+                                            {!c.isApproved && (
+                                                <div className="cd-comment-status">
+                                                    {isOwn && c.rejectionReason ? `Rejected: ${c.rejectionReason}` : 'Pending approval'}
+                                                </div>
+                                            )}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     </div>

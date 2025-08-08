@@ -59,8 +59,8 @@ const CourseCard = ({ course, onUpdate, onDelete, onComments }) => {
                     <span className="course-difficulty">{course.difficultyLevel}</span>
                 </div>
                 {!course.isApproved && (
-                    <div className="approval-status" style={{ marginTop: '8px', color: '#b58900', fontWeight: '600' }}>
-                        Waiting for admin approval
+                    <div className="approval-status" style={{ marginTop: '8px', color: '#dc2626', fontWeight: '600' }}>
+                        {course.rejectionReason ? `Rejected: ${course.rejectionReason}` : 'Waiting for admin approval'}
                     </div>
                 )}
                 <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>

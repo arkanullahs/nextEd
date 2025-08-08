@@ -25,6 +25,26 @@ router.get('/teacher', auth, async (req, res) => {
     res.send(courses);
 });
 
+// Teacher: total comment stats for their courses
+router.get('/teacher/comment-stats', auth, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).send('Access denied.');
+    try {
+        const teacherCourses = await Course.find({ teacher: req.user._id }).select('_id');
+        const courseIds = teacherCourses.map(c => c._id);
+        const totalComments = await Comment.countDocuments({ course: { $in: courseIds } });
+        // Per course counts
+        const perCourseAgg = await Comment.aggregate([
+            { $match: { course: { $in: courseIds } } },
+            { $group: { _id: '$course', count: { $sum: 1 } } }
+        ]);
+        const perCourse = {};
+        perCourseAgg.forEach(doc => { perCourse[String(doc._id)] = doc.count; });
+        res.send({ totalComments, perCourse });
+    } catch (error) {
+        res.status(500).send('Error fetching comment stats');
+    }
+});
+
 router.post('/', auth, async (req, res) => {
     if (req.user.role !== 'teacher') {
         return res.status(403).send('Access denied.');
@@ -165,14 +185,23 @@ router.get('/:id/comments', auth, async (req, res) => {
         const isTeacher = course.teacher.toString() === req.user._id;
         const isAdmin = req.user.role === 'admin';
 
-        const filter = { course: req.params.id };
-        if (!isTeacher && !isAdmin) {
-            filter.isApproved = true;
-        }
-        const comments = await Comment.find(filter)
+        const allComments = await Comment.find({ course: req.params.id })
             .sort({ createdAt: -1 })
             .populate('author', 'firstName lastName role');
-        res.send(comments);
+
+        let commentsToReturn = allComments;
+
+        if (isAdmin) {
+            commentsToReturn = allComments;
+        } else if (isTeacher) {
+            // Teachers: show approved comments + pending teacher comments only
+            commentsToReturn = allComments.filter(c => c.isApproved || (c.author && c.author.role === 'teacher'));
+        } else {
+            // Students: show approved + own comments (pending or rejected) so they can see status/reason
+            commentsToReturn = allComments.filter(c => c.isApproved || String(c.author?._id) === req.user._id);
+        }
+
+        res.send(commentsToReturn);
     } catch (error) {
         res.status(500).send('Error fetching comments');
     }
@@ -195,10 +224,54 @@ router.post('/:id/comments', auth, async (req, res) => {
     }
 });
 
+// Edit own comment
+router.put('/:id/comments/:commentId', auth, async (req, res) => {
+    try {
+        const { content } = req.body;
+        if (!content || !content.trim()) return res.status(400).send('Content is required');
+        const course = await Course.findById(req.params.id);
+        if (!course) return res.status(404).send('Course not found.');
+        const comment = await Comment.findById(req.params.commentId);
+        if (!comment) return res.status(404).send('Comment not found');
+        if (String(comment.course) !== String(course._id)) return res.status(400).send('Comment does not belong to this course');
+        const isOwner = String(comment.author) === req.user._id;
+        const isAdmin = req.user.role === 'admin';
+        if (!isOwner && !isAdmin) return res.status(403).send('Not allowed');
+        comment.content = content.trim();
+        comment.isApproved = isAdmin; // non-admin edits require re-approval
+        if (!isAdmin) comment.rejectionReason = undefined;
+        await comment.save();
+        const populated = await Comment.findById(comment._id).populate('author', 'firstName lastName role');
+        res.send(populated);
+    } catch (error) {
+        res.status(500).send('Error updating comment');
+    }
+});
+
+// Delete own comment
+router.delete('/:id/comments/:commentId', auth, async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+        if (!course) return res.status(404).send('Course not found.');
+        const comment = await Comment.findById(req.params.commentId);
+        if (!comment) return res.status(404).send('Comment not found');
+        const isOwner = String(comment.author) === req.user._id;
+        const isAdmin = req.user.role === 'admin';
+        if (!isOwner && !isAdmin) return res.status(403).send('Not allowed');
+        await comment.deleteOne();
+        res.send({ _id: comment._id, message: 'Comment deleted' });
+    } catch (error) {
+        res.status(500).send('Error deleting comment');
+    }
+});
+
 // Admin: list pending comments
 router.get('/admin/comments/pending', auth, requireAdmin, async (req, res) => {
     try {
-        const comments = await Comment.find({ isApproved: false }).sort({ createdAt: -1 }).populate('author', 'firstName lastName').populate('course', 'title');
+        const comments = await Comment.find({ isApproved: false, rejectionReason: { $in: [null, ''] } })
+            .sort({ createdAt: -1 })
+            .populate('author', 'firstName lastName role')
+            .populate('course', 'title');
         res.send(comments);
     } catch (error) {
         res.status(500).send('Error fetching pending comments');
@@ -249,7 +322,8 @@ router.put('/admin/comments/:commentId/reject', auth, requireAdmin, async (req, 
 // Admin: list pending courses for approval
 router.get('/admin/pending', auth, requireAdmin, async (req, res) => {
     try {
-        const courses = await Course.find({ isApproved: false }).populate('teacher', 'firstName lastName email');
+        const courses = await Course.find({ isApproved: false, rejectionReason: { $in: [null, ''] } })
+            .populate('teacher', 'firstName lastName email');
         res.send(courses);
     } catch (error) {
         res.status(500).send('Error fetching pending courses.');

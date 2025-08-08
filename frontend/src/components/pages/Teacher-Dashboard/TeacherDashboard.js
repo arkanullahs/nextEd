@@ -11,7 +11,13 @@ const TeacherDashboard = () => {
     const [error, setError] = useState(null);
     const [showAddCourse, setShowAddCourse] = useState(false);
     const [activeComments, setActiveComments] = useState({ open: false, course: null, comments: [], newComment: '' });
+    const [commentStats, setCommentStats] = useState({ totalComments: 0, perCourse: {} });
     const apiUrl = process.env.REACT_APP_API_URL;
+    let currentUserId = null;
+    try {
+        const token = localStorage.getItem('token');
+        if (token) currentUserId = JSON.parse(atob(token.split('.')[1]))._id;
+    } catch (e) { /* ignore */ }
 
     useEffect(() => {
         fetchCourses();
@@ -28,6 +34,15 @@ const TeacherDashboard = () => {
             setError('Failed to fetch courses');
             setIsLoading(false);
         }
+    };
+
+    const fetchCommentStats = async () => {
+        try {
+            const res = await axios.get(`${apiUrl}/courses/teacher/comment-stats`, {
+                headers: { 'x-auth-token': localStorage.getItem('token') }
+            });
+            setCommentStats(res.data);
+        } catch (e) { /* ignore */ }
     };
 
     const handleAddCourse = async (courseData) => {
@@ -85,6 +100,8 @@ const TeacherDashboard = () => {
         } catch (e) { setError('Failed to post comment'); }
     };
 
+    useEffect(() => { fetchCommentStats(); }, []);
+
     if (isLoading) return <div className="loading-message">Loading...</div>;
     if (error) return <div className="error-message">{error}</div>;
 
@@ -115,6 +132,13 @@ const TeacherDashboard = () => {
                             </div>
                         </div>
                         <div className="summary-item">
+                            <FaBook className="summary-icon" />
+                            <div className="summary-info">
+                                <h3>{commentStats.totalComments}</h3>
+                                <p>Total Comments</p>
+                            </div>
+                        </div>
+                        <div className="summary-item">
                             <FaClock className="summary-icon" />
                             <div className="summary-info">
                                 <h3>{courses.reduce((sum, course) => sum + course.duration, 0)}</h3>
@@ -141,7 +165,7 @@ const TeacherDashboard = () => {
                 </div>
                 {activeComments.open && (
                     <div className="dashboard-card form-card" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ background: '#fff', padding: 16, borderRadius: 12, width: 'min(720px, 92vw)' }}>
+                        <div style={{ background: '#fff', padding: 16, borderRadius: 12, width: 'min(720px, 92vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h3>Comments: {activeComments.course.title}</h3>
                                 <button onClick={() => setActiveComments({ open: false, course: null, comments: [], newComment: '' })}>Close</button>
@@ -152,12 +176,41 @@ const TeacherDashboard = () => {
                                     <button onClick={postComment} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px' }}>Post</button>
                                 </div>
                             </div>
-                            <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 8, overflow: 'auto' }}>
                                 {activeComments.comments.map(c => (
                                     <li key={c._id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 8 }}>
-                                        <div style={{ fontWeight: 600 }}>{c.author?.firstName} {c.author?.lastName} <span style={{ color: '#666', fontWeight: 400 }}>({c.author?.role})</span></div>
+                                        <div style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span>{c.author?.firstName} {c.author?.lastName} <span style={{ color: '#666', fontWeight: 400 }}>({c.author?.role})</span></span>
+                                            {c.author?._id === currentUserId && (
+                                                <span>
+                                                    <button style={{ marginRight: 6 }} onClick={async () => {
+                                                        const content = prompt('Edit comment:', c.content);
+                                                        if (content == null) return;
+                                                        try {
+                                                            const res = await axios.put(`${apiUrl}/courses/${activeComments.course._id}/comments/${c._id}`, { content }, {
+                                                                headers: { 'x-auth-token': localStorage.getItem('token') }
+                                                            });
+                                                            setActiveComments(prev => ({ ...prev, comments: prev.comments.map(x => x._id === c._id ? res.data : x) }));
+                                                        } catch { /* ignore */ }
+                                                    }}>Edit</button>
+                                                    <button onClick={async () => {
+                                                        if (!window.confirm('Delete this comment?')) return;
+                                                        try {
+                                                            await axios.delete(`${apiUrl}/courses/${activeComments.course._id}/comments/${c._id}`, {
+                                                                headers: { 'x-auth-token': localStorage.getItem('token') }
+                                                            });
+                                                            setActiveComments(prev => ({ ...prev, comments: prev.comments.filter(x => x._id !== c._id) }));
+                                                        } catch { /* ignore */ }
+                                                    }}>Delete</button>
+                                                </span>
+                                            )}
+                                        </div>
                                         <div>{c.content}</div>
-                                        {!c.isApproved && <div style={{ color: '#a16207', fontSize: 12 }}>Pending approval</div>}
+                                        {!c.isApproved && (
+                                            <div style={{ color: '#dc2626', fontSize: 12 }}>
+                                                {c.rejectionReason ? `Rejected: ${c.rejectionReason}` : 'Pending approval'}
+                                            </div>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

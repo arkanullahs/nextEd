@@ -11,6 +11,7 @@ const AdminDashboard = () => {
     const [pendingComments, setPendingComments] = useState([]);
     const [reviewCourse, setReviewCourse] = useState(null);
     const [editUserModal, setEditUserModal] = useState(null);
+    const [rejectCommentModal, setRejectCommentModal] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -72,14 +73,7 @@ const AdminDashboard = () => {
         } catch (err) { setError('Failed to reject course'); }
     };
 
-    const rejectComment = async (id) => {
-        const reason = prompt('Please provide a reason for rejection:');
-        if (!reason) return;
-        try {
-            await api.put(`/courses/admin/comments/${id}/reject`, { reason });
-            setPendingComments((prev) => prev.filter((c) => c._id !== id));
-        } catch (err) { setError('Failed to reject comment'); }
-    };
+    const rejectComment = (comment) => setRejectCommentModal({ _id: comment._id, content: comment.content, course: comment.course, author: comment.author, reason: '' });
 
     const editUser = (user) => setEditUserModal(user);
 
@@ -176,25 +170,29 @@ const AdminDashboard = () => {
                                 <tr>
                                     <th>Course</th>
                                     <th>Author</th>
+                                    <th>Role</th>
                                     <th>Content</th>
                                     <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {pendingComments.map((c) => (
-                                    <tr key={c._id}>
-                                        <td>{c.course?.title || c.course}</td>
-                                        <td>{c.author?.firstName} {c.author?.lastName}</td>
-                                        <td>{c.content}</td>
-                                        <td>{new Date(c.createdAt).toLocaleString()}</td>
-                                        <td>
-                                            <button className="btn primary" onClick={() => approveComment(c._id)}>Approve</button>
-                                            <button className="btn" onClick={() => rejectComment(c._id)}>Reject</button>
-                                            <button className="btn danger" onClick={() => deleteComment(c._id)}>Delete</button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {pendingComments
+                                    .sort((a, b) => (a.author?.role || '').localeCompare(b.author?.role || ''))
+                                    .map((c) => (
+                                        <tr key={c._id}>
+                                            <td>{c.course?.title || c.course}</td>
+                                            <td>{c.author?.firstName} {c.author?.lastName}</td>
+                                            <td>{c.author?.role || '-'}</td>
+                                            <td>{c.content}</td>
+                                            <td>{new Date(c.createdAt).toLocaleString()}</td>
+                                            <td>
+                                                <button className="btn primary" onClick={() => approveComment(c._id)}>Approve</button>
+                                                <button className="btn" onClick={() => rejectComment(c)}>Reject</button>
+                                                <button className="btn danger" onClick={() => deleteComment(c._id)}>Delete</button>
+                                            </td>
+                                        </tr>
+                                    ))}
                             </tbody>
                         </table>
                     )}
@@ -208,7 +206,7 @@ const AdminDashboard = () => {
                             <h3>Review Course</h3>
                             <button className="btn" onClick={() => setReviewCourse(null)}>Close</button>
                         </div>
-                        <div className="dashboard-card form-card" style={{ boxShadow: 'none', border: 'none' }}>
+                        <div className="dashboard-card form-card review-modal" style={{ boxShadow: 'none', border: 'none' }}>
                             <CourseForm initialData={reviewCourse} readOnly onCancel={() => setReviewCourse(null)} />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -251,6 +249,34 @@ const AdminDashboard = () => {
                                 <button className="btn primary" type="submit">Save</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {rejectCommentModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#fff', borderRadius: 12, padding: 16, width: 'min(560px, 95vw)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <h3>Reject Comment</h3>
+                            <button className="btn" onClick={() => setRejectCommentModal(null)}>Close</button>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <div style={{ marginBottom: 6, color: '#555' }}>Course: {rejectCommentModal.course?.title || rejectCommentModal.course}</div>
+                            <div style={{ marginBottom: 6, color: '#555' }}>Author: {rejectCommentModal.author?.firstName} {rejectCommentModal.author?.lastName} ({rejectCommentModal.author?.role})</div>
+                            <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 8 }}>{rejectCommentModal.content}</div>
+                        </div>
+                        <textarea placeholder="Reason for rejection" value={rejectCommentModal.reason} onChange={(e) => setRejectCommentModal(prev => ({ ...prev, reason: e.target.value }))} style={{ width: '100%', minHeight: 80 }} />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                            <button className="btn" onClick={() => setRejectCommentModal(null)}>Cancel</button>
+                            <button className="btn danger" onClick={async () => {
+                                if (!rejectCommentModal.reason.trim()) return;
+                                try {
+                                    await api.put(`/courses/admin/comments/${rejectCommentModal._id}/reject`, { reason: rejectCommentModal.reason });
+                                    setPendingComments(prev => prev.filter(c => c._id !== rejectCommentModal._id));
+                                    setRejectCommentModal(null);
+                                } catch (err) { setError('Failed to reject comment'); }
+                            }}>Reject</button>
+                        </div>
                     </div>
                 </div>
             )}

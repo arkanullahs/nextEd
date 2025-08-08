@@ -12,6 +12,8 @@ const CourseDetails = () => {
     const [videoUrl, setVideoUrl] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [activeLesson, setActiveLesson] = useState(0);
+    const [comments, setComments] = useState([]);
+    const [newComment, setNewComment] = useState('');
     const apiUrl = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
@@ -22,7 +24,7 @@ const CourseDetails = () => {
                     headers: { 'x-auth-token': token }
                 });
                 setCourse(response.data);
-                if (response.data.videos.length > 0) {
+                if (Array.isArray(response.data.videos) && response.data.videos.length > 0) {
                     setVideoUrl(response.data.videos[0]);
                 }
                 setIsLoading(false);
@@ -34,6 +36,16 @@ const CourseDetails = () => {
         };
 
         fetchCourseDetails();
+        const fetchComments = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.get(`${apiUrl}/courses/${courseId}/comments`, {
+                    headers: { 'x-auth-token': token }
+                });
+                setComments(response.data);
+            } catch (e) { /* ignore */ }
+        };
+        fetchComments();
     }, [courseId]);
 
     if (isLoading) {
@@ -71,7 +83,7 @@ const CourseDetails = () => {
                         <div className="cd-what-you-learn">
                             <h3>What You Will Learn</h3>
                             <ul>
-                                {course.whatYouWillLearn.map((item, index) => (
+                                {(course.whatYouWillLearn || []).map((item, index) => (
                                     <li key={index}><FiCheckCircle /> {item}</li>
                                 ))}
                             </ul>
@@ -79,7 +91,11 @@ const CourseDetails = () => {
 
                         <div className="cd-instructor">
                             <h3>Instructor</h3>
-                            <p>Teacher ID: {course.teacher}</p>
+                            {course.teacher && typeof course.teacher === 'object' ? (
+                                <p>{course.teacher.firstName} {course.teacher.lastName} ({course.teacher.email})</p>
+                            ) : (
+                                <p>Teacher ID: {course.teacher}</p>
+                            )}
                         </div>
                     </div>
 
@@ -98,7 +114,7 @@ const CourseDetails = () => {
                                 )}
                             </div>
                             <div className="cd-video-list">
-                                {course.videos.map((video, index) => (
+                                {(course.videos || []).map((video, index) => (
                                     <button
                                         key={index}
                                         className={`cd-video-button ${activeLesson === index ? 'active' : ''}`}
@@ -112,6 +128,41 @@ const CourseDetails = () => {
                                     </button>
                                 ))}
                             </div>
+                        </div>
+                        <div className="cd-comments">
+                            <h3>Comments</h3>
+                            <div className="cd-comment-form">
+                                <textarea
+                                    placeholder="Write a comment..."
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                />
+                                <button
+                                    onClick={async () => {
+                                        if (!newComment.trim()) return;
+                                        try {
+                                            const token = localStorage.getItem('token');
+                                            const res = await axios.post(`${apiUrl}/courses/${courseId}/comments`, { content: newComment }, {
+                                                headers: { 'x-auth-token': token }
+                                            });
+                                            setComments(prev => [res.data, ...prev]);
+                                            setNewComment('');
+                                        } catch (e) { /* ignore */ }
+                                    }}
+                                >
+                                    Post
+                                </button>
+                                <p className="cd-muted">Comments may require admin approval before becoming visible to others.</p>
+                            </div>
+                            <ul className="cd-comment-list">
+                                {comments.map((c) => (
+                                    <li key={c._id} className={`cd-comment ${!c.isApproved ? 'pending' : ''}`}>
+                                        <div className="cd-comment-author">{c.author?.firstName} {c.author?.lastName} <span className="cd-role">({c.author?.role})</span></div>
+                                        <div className="cd-comment-content">{c.content}</div>
+                                        {!c.isApproved && <div className="cd-comment-status">Pending approval</div>}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </div>
                 </div>

@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../../service/API';
+import './admin.css';
 
 const AdminDashboard = () => {
     const [pendingUsers, setPendingUsers] = useState([]);
     const [pendingCourses, setPendingCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [pendingComments, setPendingComments] = useState([]);
 
     const fetchData = async () => {
         try {
-            const [usersRes, coursesRes] = await Promise.all([
+            const [usersRes, coursesRes, commentsRes] = await Promise.all([
                 api.get('/users/admin/users?status=pending'),
                 api.get('/courses/admin/pending'),
+                api.get('/courses/admin/comments/pending'),
             ]);
             setPendingUsers(usersRes.data);
             setPendingCourses(coursesRes.data);
+            setPendingComments(commentsRes.data);
         } catch (err) {
             setError('Failed to load admin data');
         } finally {
@@ -40,6 +44,20 @@ const AdminDashboard = () => {
         } catch (err) {
             setError('Failed to approve course');
         }
+    };
+
+    const approveComment = async (id) => {
+        try {
+            await api.put(`/courses/admin/comments/${id}/approve`);
+            setPendingComments((prev) => prev.filter((c) => c._id !== id));
+        } catch (err) { setError('Failed to approve comment'); }
+    };
+
+    const deleteComment = async (id) => {
+        try {
+            await api.delete(`/courses/admin/comments/${id}`);
+            setPendingComments((prev) => prev.filter((c) => c._id !== id));
+        } catch (err) { setError('Failed to delete comment'); }
     };
 
     const editUser = async (user) => {
@@ -73,73 +91,107 @@ const AdminDashboard = () => {
     if (error) return <div style={{ paddingTop: 80, textAlign: 'center', color: 'red' }}>{error}</div>;
 
     return (
-        <div style={{ paddingTop: 80, paddingInline: 24 }}>
-            <h1>Admin Panel</h1>
-            <section style={{ marginTop: 24 }}>
-                <h2>Pending Users</h2>
-                {pendingUsers.length === 0 ? (
-                    <p>No pending users</p>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr>
-                                <th align="left">Name</th>
-                                <th align="left">Email</th>
-                                <th align="left">Role</th>
-                                <th align="left">ID Number</th>
-                                <th align="left">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pendingUsers.map((u) => (
-                                <tr key={u._id}>
-                                    <td>{u.firstName} {u.lastName}</td>
-                                    <td>{u.email}</td>
-                                    <td>{u.role}</td>
-                                    <td>{u.idNumber || '-'}</td>
-                                    <td>
-                                        <button onClick={() => approveUser(u._id)}>Approve</button>
-                                        <button onClick={() => resetPassword(u._id)} style={{ marginLeft: 8 }}>Reset Password</button>
-                                        <button onClick={() => editUser(u)} style={{ marginLeft: 8 }}>Edit</button>
-                                    </td>
+        <div className="admin-container">
+            <header className="admin-header">
+                <h1>Admin Panel</h1>
+            </header>
+            <div className="admin-grid">
+                <section className="admin-card">
+                    <h2>Pending Users</h2>
+                    {pendingUsers.length === 0 ? (
+                        <p className="muted">No pending users</p>
+                    ) : (
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>ID Number</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </section>
+                            </thead>
+                            <tbody>
+                                {pendingUsers.map((u) => (
+                                    <tr key={u._id}>
+                                        <td>{u.firstName} {u.lastName}</td>
+                                        <td>{u.email}</td>
+                                        <td>{u.role}</td>
+                                        <td>{u.idNumber || '-'}</td>
+                                        <td>
+                                            <button className="btn primary" onClick={() => approveUser(u._id)}>Approve</button>
+                                            <button className="btn" onClick={() => resetPassword(u._id)}>Reset Password</button>
+                                            <button className="btn" onClick={() => editUser(u)}>Edit</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </section>
 
-            <section style={{ marginTop: 24 }}>
-                <h2>Pending Courses</h2>
-                {pendingCourses.length === 0 ? (
-                    <p>No pending courses</p>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr>
-                                <th align="left">Title</th>
-                                <th align="left">Teacher</th>
-                                <th align="left">Category</th>
-                                <th align="left">Difficulty</th>
-                                <th align="left">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <section className="admin-card">
+                    <h2>Pending Courses</h2>
+                    {pendingCourses.length === 0 ? (
+                        <p className="muted">No pending courses</p>
+                    ) : (
+                        <div className="course-cards">
                             {pendingCourses.map((c) => (
-                                <tr key={c._id}>
-                                    <td>{c.title}</td>
-                                    <td>{c.teacher}</td>
-                                    <td>{c.category}</td>
-                                    <td>{c.difficultyLevel}</td>
-                                    <td>
-                                        <button onClick={() => approveCourse(c._id)}>Approve</button>
-                                    </td>
-                                </tr>
+                                <div key={c._id} className="course-card">
+                                    <img src={c.imageUrl} alt={c.title} />
+                                    <div className="course-body">
+                                        <h3>{c.title}</h3>
+                                        <p className="course-meta">{c.category} • {c.difficultyLevel}</p>
+                                        <p className="course-meta">By: {c.teacher?.firstName} {c.teacher?.lastName} ({c.teacher?.email})</p>
+                                        <p className="course-desc">{c.description}</p>
+                                        <div className="what-you-learn">
+                                            {(c.whatYouWillLearn || []).slice(0, 6).map((w, i) => (
+                                                <span key={i} className="chip">{w}</span>
+                                            ))}
+                                        </div>
+                                        <div className="course-actions">
+                                            <button className="btn primary" onClick={() => approveCourse(c._id)}>Approve</button>
+                                        </div>
+                                    </div>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
-                )}
-            </section>
+                        </div>
+                    )}
+                </section>
+
+                <section className="admin-card">
+                    <h2>Pending Comments</h2>
+                    {pendingComments.length === 0 ? (
+                        <p className="muted">No pending comments</p>
+                    ) : (
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Author</th>
+                                    <th>Content</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pendingComments.map((c) => (
+                                    <tr key={c._id}>
+                                        <td>{c.course?.title || c.course}</td>
+                                        <td>{c.author?.firstName} {c.author?.lastName}</td>
+                                        <td>{c.content}</td>
+                                        <td>{new Date(c.createdAt).toLocaleString()}</td>
+                                        <td>
+                                            <button className="btn primary" onClick={() => approveComment(c._id)}>Approve</button>
+                                            <button className="btn danger" onClick={() => deleteComment(c._id)}>Delete</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </section>
+            </div>
         </div>
     );
 };

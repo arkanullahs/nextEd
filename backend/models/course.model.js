@@ -13,7 +13,9 @@ const courseSchema = new mongoose.Schema({
     whatYouWillLearn: [{ type: String }],
     videos: [{ type: String }],
     // Admin approval for course publishing
-    isApproved: { type: Boolean, default: false }
+    isApproved: { type: Boolean, default: false },
+    // Optional reason when rejected by admin
+    rejectionReason: { type: String }
 }, { timestamps: true });
 
 const Course = mongoose.model('Course', courseSchema);

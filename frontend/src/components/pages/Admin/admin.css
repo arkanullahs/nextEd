@@ -17,8 +17,12 @@
 .course-card .course-desc { color: #333; font-size: 14px; line-height: 1.5; max-height: 84px; overflow: auto; }
 .review-modal .teacher-dashboard .image-preview { height: 230px; }
 .review-modal .teacher-dashboard .image-preview img { object-fit: cover; }
-.review-modal .teacher-dashboard .modern-form { max-width: 100%; margin: 0; }
-.review-modal .teacher-dashboard .form-header h2 { text-align: left; }
+.review-modal .teacher-dashboard .modern-form { max-width: 100%; margin: 0; background-color: #fbf9f4; }
+.review-modal .teacher-dashboard .form-header h2 { text-align: left; margin-top: 8px; }
+.review-modal .teacher-dashboard .form-body { gap: 16px; }
+.review-modal .teacher-dashboard .form-group input,
+.review-modal .teacher-dashboard .form-group textarea,
+.review-modal .teacher-dashboard .form-group select { background: #fff; }
 .chip { display: inline-block; background: #f1f5f9; color: #0f172a; padding: 4px 8px; border-radius: 9999px; font-size: 12px; margin: 4px 4px 0 0; }
 
 @media (min-width: 900px) {

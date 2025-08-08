@@ -25,6 +25,29 @@ router.get('/teacher', auth, async (req, res) => {
     res.send(courses);
 });
 
+// Admin: update a course while reviewing
+router.put('/admin/:id', auth, requireAdmin, async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+        if (!course) {
+            return res.status(404).send('Course not found.');
+        }
+
+        const updatable = ['imageUrl', 'title', 'description', 'category', 'difficultyLevel', 'price', 'duration', 'whatYouWillLearn', 'videos'];
+        updatable.forEach(key => {
+            if (req.body[key] !== undefined) {
+                course[key] = req.body[key];
+            }
+        });
+
+        // Do not auto-approve here; approval is a separate explicit action
+        await course.save();
+        res.send(course);
+    } catch (error) {
+        res.status(500).send('Error updating course.');
+    }
+});
+
 // Teacher: total comment stats for their courses
 router.get('/teacher/comment-stats', auth, async (req, res) => {
     if (req.user.role !== 'teacher') return res.status(403).send('Access denied.');

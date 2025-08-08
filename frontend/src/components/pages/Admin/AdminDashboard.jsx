@@ -12,6 +12,8 @@ const AdminDashboard = () => {
     const [reviewCourse, setReviewCourse] = useState(null);
     const [editUserModal, setEditUserModal] = useState(null);
     const [rejectCommentModal, setRejectCommentModal] = useState(null);
+    const [isEditingCourse, setIsEditingCourse] = useState(false);
+    const [rejectCourseModal, setRejectCourseModal] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -45,6 +47,8 @@ const AdminDashboard = () => {
         try {
             await api.put(`/courses/admin/${id}/approve`);
             setPendingCourses((prev) => prev.filter((c) => c._id !== id));
+            setIsEditingCourse(false);
+            setReviewCourse(null);
         } catch (err) {
             setError('Failed to approve course');
         }
@@ -200,17 +204,45 @@ const AdminDashboard = () => {
             </div>
 
             {reviewCourse && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ background: '#fff', borderRadius: 12, padding: 16, width: 'min(900px, 95vw)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12, zIndex: 1000 }}>
+                    <div style={{ background: '#fff', borderRadius: 12, padding: 16, width: 'min(900px, 95vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flex: '0 0 auto' }}>
                             <h3>Review Course</h3>
-                            <button className="btn" onClick={() => setReviewCourse(null)}>Close</button>
+                            <div>
+                                {!isEditingCourse && (
+                                    <button className="btn" onClick={() => setIsEditingCourse(true)} style={{ marginRight: 8 }}>Edit</button>
+                                )}
+                                {isEditingCourse && (
+                                    <button className="btn primary" form="admin-review-course-form" type="submit" style={{ marginRight: 8 }}>Save</button>
+                                )}
+                                <button className="btn" onClick={() => { setIsEditingCourse(false); setReviewCourse(null); }}>Close</button>
+                            </div>
                         </div>
-                        <div className="dashboard-card form-card review-modal" style={{ boxShadow: 'none', border: 'none' }}>
-                            <CourseForm initialData={reviewCourse} readOnly onCancel={() => setReviewCourse(null)} />
+                        <div className="dashboard-card form-card review-modal teacher-dashboard" style={{ boxShadow: 'none', border: 'none', flex: '1 1 auto', overflowY: 'auto', paddingBottom: 120 }}>
+                            {isEditingCourse ? (
+                                <CourseForm
+                                    initialData={reviewCourse}
+                                    readOnly={false}
+                                    formId="admin-review-course-form"
+                                    hideHeader
+                                    hideFooter
+                                    onCancel={() => setIsEditingCourse(false)}
+                                    onSubmit={async (data) => {
+                                        try {
+                                            const res = await api.put(`/courses/admin/${reviewCourse._id}`, data);
+                                            setReviewCourse(res.data || { ...reviewCourse, ...data });
+                                            setIsEditingCourse(false);
+                                        } catch (err) {
+                                            setError('Failed to update course');
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <CourseForm initialData={reviewCourse} readOnly onCancel={() => setReviewCourse(null)} hideHeader hideFooter />
+                            )}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                            <button className="btn" onClick={() => rejectCourse(reviewCourse._id)}>Reject</button>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 0, flex: '0 0 auto', position: 'sticky', bottom: 0, background: '#fff', paddingTop: 14, paddingBottom: 14, borderTop: '1px solid #eee', boxShadow: '0 -2px 8px rgba(0,0,0,0.06)' }}>
+                            <button className="btn" onClick={() => setRejectCourseModal({ _id: reviewCourse._id, title: reviewCourse.title, reason: '' })}>Reject</button>
                             <button className="btn primary" onClick={() => approveCourse(reviewCourse._id)}>Approve</button>
                         </div>
                     </div>
@@ -254,7 +286,7 @@ const AdminDashboard = () => {
             )}
 
             {rejectCommentModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
                     <div style={{ background: '#fff', borderRadius: 12, padding: 16, width: 'min(560px, 95vw)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <h3>Reject Comment</h3>
@@ -275,6 +307,34 @@ const AdminDashboard = () => {
                                     setPendingComments(prev => prev.filter(c => c._id !== rejectCommentModal._id));
                                     setRejectCommentModal(null);
                                 } catch (err) { setError('Failed to reject comment'); }
+                            }}>Reject</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {rejectCourseModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2001 }}>
+                    <div style={{ background: '#fff', borderRadius: 12, padding: 16, width: 'min(560px, 95vw)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <h3>Reject Course</h3>
+                            <button className="btn" onClick={() => setRejectCourseModal(null)}>Close</button>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <div style={{ marginBottom: 6, color: '#555' }}>Course: {rejectCourseModal.title}</div>
+                        </div>
+                        <textarea placeholder="Reason for rejection" value={rejectCourseModal.reason} onChange={(e) => setRejectCourseModal(prev => ({ ...prev, reason: e.target.value }))} style={{ width: '100%', minHeight: 80 }} />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                            <button className="btn" onClick={() => setRejectCourseModal(null)}>Cancel</button>
+                            <button className="btn danger" onClick={async () => {
+                                if (!rejectCourseModal.reason.trim()) return;
+                                try {
+                                    await api.put(`/courses/admin/${rejectCourseModal._id}/reject`, { reason: rejectCourseModal.reason });
+                                    setPendingCourses(prev => prev.filter(c => c._id !== rejectCourseModal._id));
+                                    setRejectCourseModal(null);
+                                    setReviewCourse(null);
+                                    setIsEditingCourse(false);
+                                } catch (err) { setError('Failed to reject course'); }
                             }}>Reject</button>
                         </div>
                     </div>

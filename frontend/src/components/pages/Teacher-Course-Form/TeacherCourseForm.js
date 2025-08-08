@@ -6,7 +6,7 @@ import { MdCheck, MdCancel } from 'react-icons/md';
 
 import './TeacherCourseForm.css';
 
-const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false }) => {
+const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId, hideHeader = false, hideFooter = false }) => {
     const [formData, setFormData] = useState(initialData || {
         imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
         title: '',
@@ -65,10 +65,12 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false }) => {
     };
 
     return (
-        <form className="modern-form" onSubmit={handleSubmit}>
-            <div className="form-header">
-                <h2>{initialData ? 'Edit Course' : 'Add New Course'}</h2>
-            </div>
+        <form className="modern-form" onSubmit={handleSubmit} id={formId}>
+            {!hideHeader && (
+                <div className="form-header">
+                    <h2>{initialData ? 'Edit Course' : 'Add New Course'}</h2>
+                </div>
+            )}
 
             <div className="form-body">
                 <div className="form-column">
@@ -234,19 +236,22 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false }) => {
                 </div>
             </div>
 
-            <div className="form-footer">
-
-                {onCancel && (
-                    <button type="button" className="cancel-btn2" onClick={onCancel}>
-                        <MdCancel style={{ marginRight: '8px' }} />
-                        Cancel
-                    </button>
-                )}
-                {!readOnly && <button type="submit" className="submit-btn">
-                    <MdCheck style={{ marginRight: '8px' }} />
-                    {initialData ? 'Update Course' : 'Add Course'}
-                </button>}
-            </div>
+            {!hideFooter && (
+                <div className="form-footer">
+                    {onCancel && (
+                        <button type="button" className="cancel-btn2" onClick={onCancel}>
+                            <MdCancel style={{ marginRight: '8px' }} />
+                            Cancel
+                        </button>
+                    )}
+                    {!readOnly && (
+                        <button type="submit" className="submit-btn">
+                            <MdCheck style={{ marginRight: '8px' }} />
+                            {initialData ? 'Update Course' : 'Add Course'}
+                        </button>
+                    )}
+                </div>
+            )}
 
         </form>
     );

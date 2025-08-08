@@ -3,7 +3,7 @@ import { MdEdit, MdDelete, MdPeople, MdAccessTime, MdAttachMoney } from 'react-i
 import CourseForm from '../Teacher-Course-Form/TeacherCourseForm';
 import './CourseCard.css';
 
-const CourseCard = ({ course, onUpdate, onDelete }) => {
+const CourseCard = ({ course, onUpdate, onDelete, onComments }) => {
     const [isEditing, setIsEditing] = useState(false);
 
     const handleEdit = () => {
@@ -63,6 +63,11 @@ const CourseCard = ({ course, onUpdate, onDelete }) => {
                         Waiting for admin approval
                     </div>
                 )}
+                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                    <button className="edit-btn" onClick={handleEdit}>Edit</button>
+                    <button className="delete-btn" onClick={handleDelete}>Delete</button>
+                    <button className="edit-btn" onClick={onComments}>Comments</button>
+                </div>
             </div>
         </div>
     );

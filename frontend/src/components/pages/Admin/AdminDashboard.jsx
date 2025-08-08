@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../../service/API';
 import './admin.css';
+import CourseForm from '../Teacher-Course-Form/TeacherCourseForm';
 
 const AdminDashboard = () => {
     const [pendingUsers, setPendingUsers] = useState([]);
@@ -8,6 +9,8 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [pendingComments, setPendingComments] = useState([]);
+    const [reviewCourse, setReviewCourse] = useState(null);
+    const [editUserModal, setEditUserModal] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -60,21 +63,25 @@ const AdminDashboard = () => {
         } catch (err) { setError('Failed to delete comment'); }
     };
 
-    const editUser = async (user) => {
+    const rejectCourse = async (id) => {
+        const reason = prompt('Please provide a reason for rejection:');
+        if (!reason) return;
         try {
-            const firstName = prompt('First name:', user.firstName) ?? user.firstName;
-            const lastName = prompt('Last name:', user.lastName) ?? user.lastName;
-            const email = prompt('Email:', user.email) ?? user.email;
-            const role = prompt('Role (student|teacher|admin):', user.role) ?? user.role;
-            const idNumber = prompt('ID Number:', user.idNumber || '') ?? user.idNumber;
-            await api.put(`/users/admin/users/${user._id}`, { firstName, lastName, email, role, idNumber });
-            // If role became approved via edit, reflect locally
-            setPendingUsers((prev) => prev.map((u) => u._id === user._id ? { ...u, firstName, lastName, email, role, idNumber } : u));
-            alert('User updated');
-        } catch (err) {
-            setError('Failed to update user');
-        }
+            await api.put(`/courses/admin/${id}/reject`, { reason });
+            setPendingCourses((prev) => prev.filter((c) => c._id !== id));
+        } catch (err) { setError('Failed to reject course'); }
     };
+
+    const rejectComment = async (id) => {
+        const reason = prompt('Please provide a reason for rejection:');
+        if (!reason) return;
+        try {
+            await api.put(`/courses/admin/comments/${id}/reject`, { reason });
+            setPendingComments((prev) => prev.filter((c) => c._id !== id));
+        } catch (err) { setError('Failed to reject comment'); }
+    };
+
+    const editUser = (user) => setEditUserModal(user);
 
     const resetPassword = async (id) => {
         const newPassword = prompt('Enter new password:');
@@ -94,6 +101,9 @@ const AdminDashboard = () => {
         <div className="admin-container">
             <header className="admin-header">
                 <h1>Admin Panel</h1>
+                <div>
+                    <button className="btn" onClick={fetchData}>Refresh</button>
+                </div>
             </header>
             <div className="admin-grid">
                 <section className="admin-card">
@@ -137,7 +147,7 @@ const AdminDashboard = () => {
                     ) : (
                         <div className="course-cards">
                             {pendingCourses.map((c) => (
-                                <div key={c._id} className="course-card">
+                                <div key={c._id} className="course-card" onClick={() => setReviewCourse(c)} style={{ cursor: 'pointer' }}>
                                     <img src={c.imageUrl} alt={c.title} />
                                     <div className="course-body">
                                         <h3>{c.title}</h3>
@@ -148,9 +158,6 @@ const AdminDashboard = () => {
                                             {(c.whatYouWillLearn || []).slice(0, 6).map((w, i) => (
                                                 <span key={i} className="chip">{w}</span>
                                             ))}
-                                        </div>
-                                        <div className="course-actions">
-                                            <button className="btn primary" onClick={() => approveCourse(c._id)}>Approve</button>
                                         </div>
                                     </div>
                                 </div>
@@ -183,6 +190,7 @@ const AdminDashboard = () => {
                                         <td>{new Date(c.createdAt).toLocaleString()}</td>
                                         <td>
                                             <button className="btn primary" onClick={() => approveComment(c._id)}>Approve</button>
+                                            <button className="btn" onClick={() => rejectComment(c._id)}>Reject</button>
                                             <button className="btn danger" onClick={() => deleteComment(c._id)}>Delete</button>
                                         </td>
                                     </tr>
@@ -192,6 +200,60 @@ const AdminDashboard = () => {
                     )}
                 </section>
             </div>
+
+            {reviewCourse && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#fff', borderRadius: 12, padding: 16, width: 'min(900px, 95vw)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <h3>Review Course</h3>
+                            <button className="btn" onClick={() => setReviewCourse(null)}>Close</button>
+                        </div>
+                        <div className="dashboard-card form-card" style={{ boxShadow: 'none', border: 'none' }}>
+                            <CourseForm initialData={reviewCourse} readOnly onCancel={() => setReviewCourse(null)} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                            <button className="btn" onClick={() => rejectCourse(reviewCourse._id)}>Reject</button>
+                            <button className="btn primary" onClick={() => approveCourse(reviewCourse._id)}>Approve</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {editUserModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#fff', borderRadius: 12, padding: 16, width: 'min(560px, 95vw)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <h3>Edit User</h3>
+                            <button className="btn" onClick={() => setEditUserModal(null)}>Close</button>
+                        </div>
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            try {
+                                const { _id, firstName, lastName, email, role, idNumber } = editUserModal;
+                                await api.put(`/users/admin/users/${_id}`, { firstName, lastName, email, role, idNumber });
+                                setPendingUsers((prev) => prev.map(u => u._id === _id ? { ...u, firstName, lastName, email, role, idNumber } : u));
+                                setEditUserModal(null);
+                            } catch (err) { setError('Failed to update user'); }
+                        }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                <input placeholder="First name" value={editUserModal.firstName || ''} onChange={(e) => setEditUserModal(prev => ({ ...prev, firstName: e.target.value }))} />
+                                <input placeholder="Last name" value={editUserModal.lastName || ''} onChange={(e) => setEditUserModal(prev => ({ ...prev, lastName: e.target.value }))} />
+                                <input placeholder="Email" value={editUserModal.email || ''} onChange={(e) => setEditUserModal(prev => ({ ...prev, email: e.target.value }))} style={{ gridColumn: 'span 2' }} />
+                                <select value={editUserModal.role || 'student'} onChange={(e) => setEditUserModal(prev => ({ ...prev, role: e.target.value }))}>
+                                    <option value="student">Student</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                                <input placeholder="ID Number" value={editUserModal.idNumber || ''} onChange={(e) => setEditUserModal(prev => ({ ...prev, idNumber: e.target.value }))} />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+                                <button type="button" className="btn" onClick={() => setEditUserModal(null)}>Cancel</button>
+                                <button className="btn primary" type="submit">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

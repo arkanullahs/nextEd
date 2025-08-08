@@ -211,6 +211,7 @@ router.put('/admin/comments/:commentId/approve', auth, requireAdmin, async (req,
         const comment = await Comment.findById(req.params.commentId);
         if (!comment) return res.status(404).send('Comment not found');
         comment.isApproved = true;
+        comment.rejectionReason = undefined;
         await comment.save();
         res.send({ _id: comment._id, isApproved: comment.isApproved });
     } catch (error) {
@@ -226,6 +227,22 @@ router.delete('/admin/comments/:commentId', auth, requireAdmin, async (req, res)
         res.send({ _id: comment._id, message: 'Comment deleted' });
     } catch (error) {
         res.status(500).send('Error deleting comment');
+    }
+});
+
+// Admin: reject a comment with reason (soft reject)
+router.put('/admin/comments/:commentId/reject', auth, requireAdmin, async (req, res) => {
+    try {
+        const { reason } = req.body;
+        if (!reason || !reason.trim()) return res.status(400).send('Rejection reason is required');
+        const comment = await Comment.findById(req.params.commentId);
+        if (!comment) return res.status(404).send('Comment not found');
+        comment.isApproved = false;
+        comment.rejectionReason = reason.trim();
+        await comment.save();
+        res.send({ _id: comment._id, isApproved: comment.isApproved, rejectionReason: comment.rejectionReason });
+    } catch (error) {
+        res.status(500).send('Error rejecting comment');
     }
 });
 
@@ -245,10 +262,27 @@ router.put('/admin/:id/approve', auth, requireAdmin, async (req, res) => {
         const course = await Course.findById(req.params.id);
         if (!course) return res.status(404).send('Course not found.');
         course.isApproved = true;
+        course.rejectionReason = undefined;
         await course.save();
         res.send({ _id: course._id, isApproved: course.isApproved });
     } catch (error) {
         res.status(500).send('Error approving course.');
+    }
+});
+
+// Admin: reject a course with reason
+router.put('/admin/:id/reject', auth, requireAdmin, async (req, res) => {
+    try {
+        const { reason } = req.body;
+        if (!reason || !reason.trim()) return res.status(400).send('Rejection reason is required');
+        const course = await Course.findById(req.params.id);
+        if (!course) return res.status(404).send('Course not found.');
+        course.isApproved = false;
+        course.rejectionReason = reason.trim();
+        await course.save();
+        res.send({ _id: course._id, isApproved: course.isApproved, rejectionReason: course.rejectionReason });
+    } catch (error) {
+        res.status(500).send('Error rejecting course.');
     }
 });
 

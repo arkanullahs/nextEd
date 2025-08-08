@@ -11,6 +11,7 @@ function Signup() {
 	const [password, setPassword] = useState("");
 	const [role, setRole] = useState("student");
 	const [error, setError] = useState("");
+	const [idNumber, setIdNumber] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const history = useHistory();
 	const apiUrl = process.env.REACT_APP_API_URL;
@@ -40,6 +41,11 @@ function Signup() {
 		setError("");
 	}
 
+	function handleIdNumberChange(e) {
+		setIdNumber(e.target.value);
+		setError("");
+	}
+
 	async function handleSubmit(e) {
 		e.preventDefault();
 		setIsLoading(true);
@@ -51,7 +57,8 @@ function Signup() {
 				lastName,
 				email,
 				password,
-				role
+				role,
+				idNumber
 			});
 			history.push("/login");
 		} catch (err) {
@@ -112,6 +119,16 @@ function Signup() {
 						/>
 					</div>
 					<div className={styles.inputWrapper}>
+						<FaUser className={styles.inputIcon} />
+						<input
+							type="text"
+							placeholder="ID Number (for verification)"
+							value={idNumber}
+							onChange={handleIdNumberChange}
+							className={styles.input}
+						/>
+					</div>
+					<div className={styles.inputWrapper}>
 						<FaUserGraduate className={styles.inputIcon} />
 						<select
 							value={role}
@@ -120,6 +137,7 @@ function Signup() {
 						>
 							<option value="student">Student</option>
 							<option value="teacher">Teacher</option>
+							<option value="admin">Admin</option>
 						</select>
 					</div>
 					{error && <p className={styles.errorText}>{error}</p>}

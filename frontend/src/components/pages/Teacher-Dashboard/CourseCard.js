@@ -58,6 +58,11 @@ const CourseCard = ({ course, onUpdate, onDelete }) => {
                     <span className="course-category">{course.category}</span>
                     <span className="course-difficulty">{course.difficultyLevel}</span>
                 </div>
+                {!course.isApproved && (
+                    <div className="approval-status" style={{ marginTop: '8px', color: '#b58900', fontWeight: '600' }}>
+                        Waiting for admin approval
+                    </div>
+                )}
             </div>
         </div>
     );

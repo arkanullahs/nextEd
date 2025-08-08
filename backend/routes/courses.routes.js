@@ -5,8 +5,16 @@ const User = require('../models/user.model');
 const mongoose = require('mongoose');
 const router = express.Router();
 
+function requireAdmin(req, res, next) {
+    if (req.user.role !== 'admin') return res.status(403).send('Access denied.');
+    next();
+}
+
 router.get('/', auth, async (req, res) => {
-    const courses = await Course.find().select('-videos');
+    // Students see only approved courses; teachers/admins see their own logic
+    const filter = {};
+    if (req.user.role === 'student') filter.isApproved = true;
+    const courses = await Course.find(filter).select('-videos');
     res.send(courses);
 });
 
@@ -23,7 +31,8 @@ router.post('/', auth, async (req, res) => {
 
     const course = new Course({
         ...req.body,
-        teacher: req.user._id
+        teacher: req.user._id,
+        isApproved: false
     });
 
     try {
@@ -60,8 +69,9 @@ router.get('/:id', auth, async (req, res) => {
 
     const isEnrolled = course.enrolledStudents.includes(req.user._id);
     const isTeacher = course.teacher.toString() === req.user._id;
+    const isAdmin = req.user.role === 'admin';
 
-    if (!isEnrolled && !isTeacher) {
+    if (!isEnrolled && !isTeacher && !isAdmin) {
         const { videos, ...courseData } = course.toObject();
         return res.send(courseData);
     }
@@ -106,8 +116,15 @@ router.put('/:id', auth, async (req, res) => {
             return res.status(403).send('You are not authorized to update this course.');
         }
 
-        // Update course details
-        Object.assign(course, req.body);
+        // Update course details (reset approval if significant fields change)
+        const updatable = ['imageUrl', 'title', 'description', 'category', 'difficultyLevel', 'price', 'duration', 'whatYouWillLearn', 'videos'];
+        updatable.forEach(key => {
+            if (req.body[key] !== undefined) {
+                course[key] = req.body[key];
+            }
+        });
+        // If teacher made changes, require re-approval
+        course.isApproved = false;
         await course.save();
         res.send(course);
     } catch (error) {
@@ -129,10 +146,34 @@ router.get('/getOneCourse/:id', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
         if (!course) return res.status(404).send('Course not found.');
+        if (!course.isApproved) return res.status(403).send('Course is not approved yet.');
         res.send(course);
     } catch (error) {
         console.error('Error fetching course:', error);
         res.status(500).send('Error fetching course.');
+    }
+});
+
+// Admin: list pending courses for approval
+router.get('/admin/pending', auth, requireAdmin, async (req, res) => {
+    try {
+        const courses = await Course.find({ isApproved: false });
+        res.send(courses);
+    } catch (error) {
+        res.status(500).send('Error fetching pending courses.');
+    }
+});
+
+// Admin: approve a course
+router.put('/admin/:id/approve', auth, requireAdmin, async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+        if (!course) return res.status(404).send('Course not found.');
+        course.isApproved = true;
+        await course.save();
+        res.send({ _id: course._id, isApproved: course.isApproved });
+    } catch (error) {
+        res.status(500).send('Error approving course.');
     }
 });
 

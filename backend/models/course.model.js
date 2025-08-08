@@ -11,8 +11,10 @@ const courseSchema = new mongoose.Schema({
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     enrolledStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     whatYouWillLearn: [{ type: String }],
-    videos: [{ type: String }]
-});
+    videos: [{ type: String }],
+    // Admin approval for course publishing
+    isApproved: { type: Boolean, default: false }
+}, { timestamps: true });
 
 const Course = mongoose.model('Course', courseSchema);
 

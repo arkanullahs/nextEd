@@ -68,6 +68,10 @@ const TeacherDashboard = () => {
         }
     };
 
+    const handleLiveUpdated = (id, liveSession) => {
+        setCourses(prev => prev.map(c => c._id === id ? { ...c, liveSession } : c));
+    };
+
     const handleDeleteCourse = async (id) => {
         try {
             await axios.delete(`${apiUrl}/courses/${id}`, {
@@ -160,6 +164,7 @@ const TeacherDashboard = () => {
                             onUpdate={handleUpdateCourse}
                             onDelete={handleDeleteCourse}
                             onComments={() => openComments(course)}
+                            onLiveUpdated={handleLiveUpdated}
                         />
                     ))}
                 </div>

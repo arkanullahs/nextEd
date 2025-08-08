@@ -25,6 +25,55 @@ router.get('/teacher', auth, async (req, res) => {
     res.send(courses);
 });
 
+// Teacher: start a live session for a course
+router.post('/:id/live/start', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'teacher') return res.status(403).send('Access denied.');
+        const course = await Course.findById(req.params.id);
+        if (!course) return res.status(404).send('Course not found.');
+        if (String(course.teacher) !== req.user._id) return res.status(403).send('Not your course.');
+
+        // Generate simple room name if not provided
+        const providedRoom = (req.body && req.body.roomName && String(req.body.roomName).trim()) || null;
+        const randomSuffix = Math.random().toString(36).slice(2, 8);
+        const defaultRoom = `course_${String(course._id).slice(-6)}_${randomSuffix}`;
+
+        course.liveSession = {
+            isLive: true,
+            roomName: providedRoom || defaultRoom,
+            startedAt: new Date(),
+            endedAt: undefined
+        };
+        await course.save();
+        res.send({
+            _id: course._id,
+            liveSession: course.liveSession
+        });
+    } catch (e) {
+        res.status(500).send('Error starting live session');
+    }
+});
+
+// Teacher: stop a live session for a course
+router.post('/:id/live/stop', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'teacher') return res.status(403).send('Access denied.');
+        const course = await Course.findById(req.params.id);
+        if (!course) return res.status(404).send('Course not found.');
+        if (String(course.teacher) !== req.user._id) return res.status(403).send('Not your course.');
+
+        if (!course.liveSession || !course.liveSession.isLive) {
+            return res.status(400).send('No active live session');
+        }
+        course.liveSession.isLive = false;
+        course.liveSession.endedAt = new Date();
+        await course.save();
+        res.send({ _id: course._id, liveSession: course.liveSession });
+    } catch (e) {
+        res.status(500).send('Error stopping live session');
+    }
+});
+
 // Admin: update a course while reviewing
 router.put('/admin/:id', auth, requireAdmin, async (req, res) => {
     try {

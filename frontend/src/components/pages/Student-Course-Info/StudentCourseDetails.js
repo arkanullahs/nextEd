@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import ReactPlayer from 'react-player';
@@ -13,6 +13,8 @@ const CourseDetails = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [activeLesson, setActiveLesson] = useState(0);
     const [comments, setComments] = useState([]);
+    const [showLive, setShowLive] = useState(false);
+    const liveIframeRef = useRef(null);
     const [newComment, setNewComment] = useState('');
     const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -100,6 +102,44 @@ const CourseDetails = () => {
                     </div>
 
                     <div className="cd-right-column">
+                        {course.liveSession?.isLive && (
+                            <div className="cd-live-session" style={{ marginBottom: 16 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                    <h3 style={{ margin: 0 }}>Live Class is in session</h3>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <button onClick={() => setShowLive(v => !v)} className="cd-video-button" style={{ padding: '6px 10px' }}>
+                                            {showLive ? 'Hide' : 'Join'}
+                                        </button>
+                                        <button
+                                            className="cd-video-button"
+                                            style={{ padding: '6px 10px' }}
+                                            onClick={() => {
+                                                const el = liveIframeRef.current;
+                                                if (!el) return;
+                                                const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+                                                if (fn) fn.call(el);
+                                            }}
+                                        >
+                                            Fullscreen
+                                        </button>
+                                    </div>
+                                </div>
+                                {/* Keep iframe mounted to preserve meeting state; hide visually when toggled off */}
+                                <div style={{ marginTop: 8, transition: 'height 200ms, opacity 200ms', overflow: 'hidden', height: showLive ? 500 : 0, opacity: showLive ? 1 : 0 }}>
+                                    <iframe
+                                        ref={liveIframeRef}
+                                        title="Live Class"
+                                        allow="camera; microphone; fullscreen; display-capture; clipboard-write"
+                                        allowFullScreen
+                                        src={`https://meet.jit.si/${encodeURIComponent(course.liveSession.roomName || `course_${course._id}`)}#userInfo.displayName=%22${encodeURIComponent('Student')}%22`}
+                                        style={{ width: '100%', height: 500, border: 0, borderRadius: 12 }}
+                                    />
+                                    <div style={{ fontSize: 12, color: '#555', marginTop: 6 }}>
+                                        Powered by Jitsi Meet
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div className="cd-video-player">
                             <h3>Course Content</h3>
                             <div className="cd-video-container">

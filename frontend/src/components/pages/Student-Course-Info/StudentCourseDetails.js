@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import ReactPlayer from 'react-player';
@@ -15,6 +16,9 @@ const CourseDetails = () => {
     const [comments, setComments] = useState([]);
     const [showLive, setShowLive] = useState(false);
     const liveIframeRef = useRef(null);
+    const liveRoomUrl = useMemo(() => {
+        return `https://meet.jit.si/${encodeURIComponent(course?.liveSession?.roomName || `course_${course?._id}`)}#userInfo.displayName=%22${encodeURIComponent('Student')}%22`;
+    }, [course?.liveSession?.roomName, course?._id]);
     const [newComment, setNewComment] = useState('');
     const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -48,6 +52,25 @@ const CourseDetails = () => {
             } catch (e) { /* ignore */ }
         };
         fetchComments();
+        // Poll for live session status to reflect changes from teacher quickly
+        const intervalId = setInterval(async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(`${apiUrl}/courses/getOneCourse/${courseId}`, { headers: { 'x-auth-token': token } });
+                const newCourse = res.data;
+                setCourse(prev => {
+                    const prevIsLive = !!prev?.liveSession?.isLive;
+                    const nextIsLive = !!newCourse?.liveSession?.isLive;
+                    if (prevIsLive && !nextIsLive) {
+                        // Live ended; hide the iframe
+                        setShowLive(false);
+                    }
+                    return newCourse;
+                });
+            } catch (e) { /* ignore transient errors */ }
+        }, 3000);
+
+        return () => clearInterval(intervalId);
     }, [courseId]);
 
     if (isLoading) {
@@ -107,37 +130,46 @@ const CourseDetails = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                     <h3 style={{ margin: 0 }}>Live Class is in session</h3>
                                     <div style={{ display: 'flex', gap: 8 }}>
-                                        <button onClick={() => setShowLive(v => !v)} className="cd-video-button" style={{ padding: '6px 10px' }}>
-                                            {showLive ? 'Hide' : 'Join'}
-                                        </button>
-                                        <button
-                                            className="cd-video-button"
-                                            style={{ padding: '6px 10px' }}
-                                            onClick={() => {
-                                                const el = liveIframeRef.current;
-                                                if (!el) return;
-                                                const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-                                                if (fn) fn.call(el);
-                                            }}
-                                        >
-                                            Fullscreen
+                                        <button onClick={() => setShowLive(true)} className="cd-video-button" style={{ padding: '6px 10px' }}>
+                                            Join
                                         </button>
                                     </div>
                                 </div>
-                                {/* Keep iframe mounted to preserve meeting state; hide visually when toggled off */}
-                                <div style={{ marginTop: 8, transition: 'height 200ms, opacity 200ms', overflow: 'hidden', height: showLive ? 500 : 0, opacity: showLive ? 1 : 0 }}>
-                                    <iframe
-                                        ref={liveIframeRef}
-                                        title="Live Class"
-                                        allow="camera; microphone; fullscreen; display-capture; clipboard-write"
-                                        allowFullScreen
-                                        src={`https://meet.jit.si/${encodeURIComponent(course.liveSession.roomName || `course_${course._id}`)}#userInfo.displayName=%22${encodeURIComponent('Student')}%22`}
-                                        style={{ width: '100%', height: 500, border: 0, borderRadius: 12 }}
-                                    />
-                                    <div style={{ fontSize: 12, color: '#555', marginTop: 6 }}>
-                                        Powered by Jitsi Meet
-                                    </div>
-                                </div>
+                                {/* Modal overlay like teacher */}
+                                {showLive && createPortal(
+                                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ background: '#fff', width: 'min(1200px, 92vw)', height: 'min(85vh, 820px)', borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottom: '1px solid #eee' }}>
+                                                <div style={{ fontWeight: 600 }}>Live: {course.title}</div>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <button
+                                                        className="cd-video-button"
+                                                        onClick={() => {
+                                                            const el = liveIframeRef.current;
+                                                            if (!el) return;
+                                                            const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+                                                            if (fn) fn.call(el);
+                                                        }}
+                                                    >
+                                                        Fullscreen
+                                                    </button>
+                                                    <button className="cd-video-button" onClick={() => setShowLive(false)}>Close</button>
+                                                </div>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <iframe
+                                                    ref={liveIframeRef}
+                                                    title="Live Class"
+                                                    allow="camera; microphone; fullscreen; display-capture; clipboard-write"
+                                                    allowFullScreen
+                                                    src={liveRoomUrl}
+                                                    style={{ width: '100%', height: '100%', border: 0, borderRadius: 0 }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>,
+                                    document.body
+                                )}
                             </div>
                         )}
                         <div className="cd-video-player">

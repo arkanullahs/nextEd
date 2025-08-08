@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { MdEdit, MdDelete, MdPeople, MdAccessTime, MdAttachMoney } from 'react-icons/md';
+import React, { useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { MdEdit, MdDelete, MdPeople, MdAccessTime, MdAttachMoney, MdComment } from 'react-icons/md';
 import CourseForm from '../Teacher-Course-Form/TeacherCourseForm';
 import './CourseCard.css';
 
@@ -9,6 +10,9 @@ const CourseCard = ({ course, onUpdate, onDelete, onComments, onLiveUpdated }) =
     const [roomNameInput, setRoomNameInput] = useState(course.liveSession?.roomName || '');
     const [showTeacherLive, setShowTeacherLive] = useState(false);
     const liveIframeRef = useRef(null);
+    const roomUrl = useMemo(() => {
+        return `https://meet.jit.si/${encodeURIComponent(course.liveSession?.roomName || `course_${course._id}`)}#userInfo.displayName=%22${encodeURIComponent('Teacher')}%22`;
+    }, [course.liveSession?.roomName, course._id]);
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -75,23 +79,25 @@ const CourseCard = ({ course, onUpdate, onDelete, onComments, onLiveUpdated }) =
     }
 
     return (
-        <div
-            className="dashboard-card course-card"
-            style={{ gridColumn: course.liveSession?.isLive ? 'span 2' : undefined }}
-        >
+        <div className="dashboard-card course-card">
             <div className="course-card-image">
                 <img src={course.imageUrl} alt={course.title} />
-                <div className="course-card-actions">
-                    <button onClick={handleEdit} className="edit-btn" aria-label="Edit course">
-                        <MdEdit />
-                    </button>
-                    <button onClick={handleDelete} className="delete-btn" aria-label="Delete course">
-                        <MdDelete />
-                    </button>
-                </div>
             </div>
             <div className="course-card-content">
-                <h2 className="course-title">{course.title}</h2>
+                <div className="course-card-header">
+                    <h2 className="course-title" style={{ margin: 0 }}>{course.title}</h2>
+                    <div className="course-card-actions-inline">
+                        <button onClick={handleEdit} className="edit-btn" aria-label="Edit course">
+                            <MdEdit />
+                        </button>
+                        <button onClick={handleDelete} className="delete-btn" aria-label="Delete course">
+                            <MdDelete />
+                        </button>
+                        <button onClick={onComments} className="edit-btn" aria-label="Comments">
+                            <MdComment />
+                        </button>
+                    </div>
+                </div>
                 <p className="course-description">{course.description}</p>
                 <div className="course-meta">
                     <div className="meta-item"><MdPeople /> {course.__v} students</div>
@@ -107,18 +113,15 @@ const CourseCard = ({ course, onUpdate, onDelete, onComments, onLiveUpdated }) =
                         {course.rejectionReason ? `Rejected: ${course.rejectionReason}` : 'Waiting for admin approval'}
                     </div>
                 )}
-                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button className="edit-btn" onClick={handleEdit}>Edit</button>
-                        <button className="delete-btn" onClick={handleDelete}>Delete</button>
-                        <button className="edit-btn" onClick={onComments}>Comments</button>
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                         {!course.liveSession?.isLive && (
                             <>
                                 <input
                                     value={roomNameInput}
                                     onChange={(e) => setRoomNameInput(e.target.value)}
                                     placeholder="Room name (optional)"
-                                    style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #ddd' }}
+                                    style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #ddd', minWidth: 220 }}
                                 />
                                 <button className="edit-btn" onClick={toggleLive} disabled={isStartingLive}>
                                     Start Live
@@ -141,33 +144,39 @@ const CourseCard = ({ course, onUpdate, onDelete, onComments, onLiveUpdated }) =
                             Live room: {course.liveSession.roomName}
                         </div>
                     )}
-                    {course.liveSession?.isLive && showTeacherLive && (
-                        <div style={{ marginTop: 8 }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-                                <button
-                                    className="edit-btn"
-                                    onClick={() => {
-                                        const el = liveIframeRef.current;
-                                        if (!el) return;
-                                        const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-                                        if (fn) fn.call(el);
-                                    }}
-                                >
-                                    Fullscreen
-                                </button>
+                    {course.liveSession?.isLive && showTeacherLive && createPortal(
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ background: '#fff', width: 'min(1200px, 92vw)', height: 'min(85vh, 820px)', borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottom: '1px solid #eee' }}>
+                                    <div style={{ fontWeight: 600 }}>Live: {course.title}</div>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <button
+                                            className="edit-btn"
+                                            onClick={() => {
+                                                const el = liveIframeRef.current;
+                                                if (!el) return;
+                                                const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+                                                if (fn) fn.call(el);
+                                            }}
+                                        >
+                                            Fullscreen
+                                        </button>
+                                        <button className="delete-btn" onClick={() => setShowTeacherLive(false)}>Close</button>
+                                    </div>
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <iframe
+                                        ref={liveIframeRef}
+                                        title="Teacher Live Room"
+                                        allow="camera; microphone; fullscreen; display-capture; clipboard-write"
+                                        allowFullScreen
+                                        src={roomUrl}
+                                        style={{ width: '100%', height: '100%', border: 0 }}
+                                    />
+                                </div>
                             </div>
-                            <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden' }}>
-                                <iframe
-                                    ref={liveIframeRef}
-                                    title="Teacher Live Room"
-                                    allow="camera; microphone; fullscreen; display-capture; clipboard-write"
-                                    allowFullScreen
-                                    src={`https://meet.jit.si/${encodeURIComponent(course.liveSession.roomName || `course_${course._id}`)}#userInfo.displayName=%22${encodeURIComponent('Teacher')}%22`}
-                                    style={{ width: '100%', height: 520, border: 0 }}
-                                />
-                            </div>
-                            <div style={{ fontSize: 12, color: '#555', marginTop: 6 }}>Powered by Jitsi Meet</div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>
             </div>

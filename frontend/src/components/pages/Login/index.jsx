@@ -34,7 +34,13 @@ function Login() {
 			});
 			localStorage.setItem("token", response.data.token);
 			localStorage.setItem("userRole", response.data.user.role);
-			history.push(response.data.user.role === 'teacher' ? "/teacher-dashboard" : "/student-dashboard");
+			history.push(
+				response.data.user.role === 'teacher' ?
+					"/teacher-dashboard" :
+					response.data.user.role === 'admin' ?
+						"/admin" :
+						"/student-dashboard"
+			);
 		} catch (err) {
 			if (err.response) {
 				setError(err.response.data);

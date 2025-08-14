@@ -36,9 +36,22 @@ const CourseList = ({ courses, onEnroll, enrolledCourses, isEnrolledList }) => {
                                     Enroll
                                 </button>
                             ) : (
-                                <Link to={`/courses/getOneCourse/${course._id}`} className="cl-view-button-link">
-                                    <button className="cl-view-button">View Course</button>
-                                </Link>
+                                course.isApproved ? (
+                                    <Link to={`/courses/getOneCourse/${course._id}`} className="cl-view-button-link">
+                                        <button className="cl-view-button">View Course</button>
+                                    </Link>
+                                ) : (
+                                    <div>
+                                        <button className="cl-view-button" disabled style={{ background: '#f5f5f5', color: '#999', cursor: 'not-allowed' }}>
+                                            {course.rejectionReason ? 'Rejected' : 'Pending approval'}
+                                        </button>
+                                        {course.rejectionReason && (
+                                            <div style={{ marginTop: 6, color: '#dc2626', fontWeight: 600 }}>
+                                                Reason: {course.rejectionReason}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
                             )}
                         </div>
                     </div>

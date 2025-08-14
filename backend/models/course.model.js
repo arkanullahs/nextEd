@@ -11,8 +11,19 @@ const courseSchema = new mongoose.Schema({
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     enrolledStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     whatYouWillLearn: [{ type: String }],
-    videos: [{ type: String }]
-});
+    videos: [{ type: String }],
+    // Admin approval for course publishing
+    isApproved: { type: Boolean, default: false },
+    // Optional reason when rejected by admin
+    rejectionReason: { type: String },
+    // Live session metadata for lightweight Jitsi-style classes
+    liveSession: {
+        isLive: { type: Boolean, default: false },
+        roomName: { type: String },
+        startedAt: { type: Date },
+        endedAt: { type: Date }
+    }
+}, { timestamps: true });
 
 const Course = mongoose.model('Course', courseSchema);
 

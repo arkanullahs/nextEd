@@ -6,7 +6,7 @@ import { MdCheck, MdCancel } from 'react-icons/md';
 
 import './TeacherCourseForm.css';
 
-const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId, hideHeader = false, hideFooter = false }) => {
+const CourseForm = ({ onSubmit, initialData, onCancel }) => {
     const [formData, setFormData] = useState(initialData || {
         imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
         title: '',
@@ -60,17 +60,14 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (readOnly) return;
         onSubmit(formData);
     };
 
     return (
-        <form className="modern-form" onSubmit={handleSubmit} id={formId}>
-            {!hideHeader && (
-                <div className="form-header">
-                    <h2>{initialData ? 'Edit Course' : 'Add New Course'}</h2>
-                </div>
-            )}
+        <form className="modern-form" onSubmit={handleSubmit}>
+            <div className="form-header">
+                <h2>{initialData ? 'Edit Course' : 'Add New Course'}</h2>
+            </div>
 
             <div className="form-body">
                 <div className="form-column">
@@ -82,7 +79,6 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             onChange={handleChange}
                             placeholder="Image Url"
                             required
-                            disabled={readOnly}
                         />
                     </div>
 
@@ -94,7 +90,6 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             onChange={handleChange}
                             placeholder="Course Title"
                             required
-                            disabled={readOnly}
                         />
                     </div>
 
@@ -105,7 +100,6 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             value={formData.category}
                             onChange={handleChange}
                             required
-                            disabled={readOnly}
                         >
                             <option value="">Select Category</option>
                             <option value="Programming">Programming</option>
@@ -122,7 +116,6 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             value={formData.difficultyLevel}
                             onChange={handleChange}
                             required
-                            disabled={readOnly}
                         >
                             <option value="">Select Difficulty Level</option>
                             <option value="Beginner">Beginner</option>
@@ -140,7 +133,6 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             onChange={handleChange}
                             placeholder="Price"
                             required
-                            disabled={readOnly}
                         />
                     </div>
 
@@ -153,7 +145,6 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             onChange={handleChange}
                             placeholder="Duration (in hours)"
                             required
-                            disabled={readOnly}
                         />
                     </div>
                     <div className="form-group">
@@ -164,7 +155,6 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             onChange={handleChange}
                             placeholder="Course Description"
                             required
-                            disabled={readOnly}
                         />
                     </div>
                 </div>
@@ -184,7 +174,7 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             onChange={handleVideoChange}
                             placeholder="Add Video Link"
                         />
-                        <button type="button" onClick={addVideo} className="add-btn" disabled={readOnly}>
+                        <button type="button" onClick={addVideo} className="add-btn">
                             <FaPlus />
                         </button>
                     </div>
@@ -196,7 +186,7 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                                 {formData.videos.map((video, index) => (
                                     <li key={index}>
                                         {video}
-                                        <button type="button" onClick={() => removeVideo(index)} className="remove-btn" disabled={readOnly}>
+                                        <button type="button" onClick={() => removeVideo(index)} className="remove-btn">
                                             <FaTrash />
                                         </button>
                                     </li>
@@ -213,7 +203,7 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                             onChange={handleWhatYouWillLearnChange}
                             placeholder="Add New Learning Scopes"
                         />
-                        <button type="button" onClick={addWhatYouWillLearn} className="add-btn" disabled={readOnly}>
+                        <button type="button" onClick={addWhatYouWillLearn} className="add-btn">
                             <FaPlus />
                         </button>
                     </div>
@@ -225,7 +215,7 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                                 {formData.whatYouWillLearn.map((item, index) => (
                                     <li key={index}>
                                         {item}
-                                        <button type="button" onClick={() => removeWhatYouWillLearn(index)} className="remove-btn" disabled={readOnly}>
+                                        <button type="button" onClick={() => removeWhatYouWillLearn(index)} className="remove-btn">
                                             <FaTrash />
                                         </button>
                                     </li>
@@ -236,22 +226,19 @@ const CourseForm = ({ onSubmit, initialData, onCancel, readOnly = false, formId,
                 </div>
             </div>
 
-            {!hideFooter && (
-                <div className="form-footer">
-                    {onCancel && (
-                        <button type="button" className="cancel-btn2" onClick={onCancel}>
-                            <MdCancel style={{ marginRight: '8px' }} />
-                            Cancel
-                        </button>
-                    )}
-                    {!readOnly && (
-                        <button type="submit" className="submit-btn">
-                            <MdCheck style={{ marginRight: '8px' }} />
-                            {initialData ? 'Update Course' : 'Add Course'}
-                        </button>
-                    )}
-                </div>
-            )}
+            <div className="form-footer">
+
+                {onCancel && (
+                    <button type="button" className="cancel-btn2" onClick={onCancel}>
+                        <MdCancel style={{ marginRight: '8px' }} />
+                        Cancel
+                    </button>
+                )}
+                <button type="submit" className="submit-btn">
+                    <MdCheck style={{ marginRight: '8px' }} />
+                    {initialData ? 'Update Course' : 'Add Course'}
+                </button>
+            </div>
 
         </form>
     );

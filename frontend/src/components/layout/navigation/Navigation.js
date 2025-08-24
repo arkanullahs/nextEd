@@ -103,11 +103,6 @@ const Navigation = () => {
                                     <FontAwesomeIcon icon={faHome} className="nav-icon" />
                                     <span className="nav-text">Dashboard</span>
                                 </Link>
-                            ) : userRole === 'admin' ? (
-                                <Link to="/admin" className="nav-link">
-                                    <FontAwesomeIcon icon={faHome} className="nav-icon" />
-                                    <span className="nav-text">Admin</span>
-                                </Link>
                             ) : (
                                 <Link to="/student-dashboard" className="nav-link">
                                     <FontAwesomeIcon icon={faHome} className="nav-icon" />

@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     role: { type: String, enum: ['student', 'teacher', 'admin'], required: true },
     approved: { type: Boolean, default: false },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    rejectionReason: { type: String },
     governmentIdUrl: { type: String },
     enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }]
 }, { timestamps: true });

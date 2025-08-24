@@ -131,6 +131,16 @@
     font-weight: 500;
 }
 
+.rejection-banner {
+    background: #ffe6e6;
+    color: #b71c1c;
+    border: 1px solid #ffc2c2;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
 .course-meta {
     display: flex;
     justify-content: space-between;
@@ -167,4 +177,27 @@
 .course-difficulty {
     background-color: #fff7e6;
     color: #fa8c16;
+}
+
+.course-status {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.course-status.pending {
+    background-color: #f0f0f0;
+    color: #888;
+}
+
+.course-status.rejected {
+    background-color: #ffe6e6;
+    color: #d32f2f;
+}
+
+.course-card.course-pending {
+    opacity: 0.6;
+    filter: grayscale(0.3);
 }

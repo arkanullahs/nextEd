@@ -56,6 +56,17 @@
     font-weight: 500;
 }
 
+.cd-banner {
+    background: #fff8e1;
+    color: #8a6d3b;
+    border: 1px solid #ffecb5;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin: 10px auto 0;
+    max-width: 800px;
+    font-weight: 600;
+}
+
 .cd-info {
     display: flex;
     justify-content: center;

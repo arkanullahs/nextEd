@@ -113,6 +113,9 @@ router.put('/:id', auth, async (req, res) => {
 
         // Update course details
         Object.assign(course, req.body);
+        // Any teacher edit requires re-approval
+        course.status = 'pending';
+        course.rejectionReason = undefined;
         await course.save();
         res.send(course);
     } catch (error) {
@@ -134,6 +137,20 @@ router.get('/getOneCourse/:id', auth, async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
         if (!course) return res.status(404).send('Course not found.');
+
+        // Do not expose rejected courses to students
+        if (course.status === 'rejected') {
+            return res.status(404).send('Course not found.');
+        }
+
+        // Only enrolled students can access course details
+        const isEnrolled = course.enrolledStudents.map(id => id.toString()).includes(req.user._id);
+        if (!isEnrolled) {
+            return res.status(403).send('Access denied.');
+        }
+
+        // For pending courses, still return full content so enrolled students can continue
+        // learning while the course is under edit/review
         res.send(course);
     } catch (error) {
         console.error('Error fetching course:', error);

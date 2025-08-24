@@ -10,7 +10,7 @@ function Login() {
 	const [error, setError] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const history = useHistory();
-	const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+	const apiUrl = process.env.REACT_APP_API_URL;
 
 	function handleEmailChange(e) {
 		setEmail(e.target.value);
@@ -34,7 +34,10 @@ function Login() {
 			});
 			localStorage.setItem("token", response.data.token);
 			localStorage.setItem("userRole", response.data.user.role);
-			history.push(response.data.user.role === 'teacher' ? "/teacher-dashboard" : "/student-dashboard");
+			const role = response.data.user.role;
+			if (role === 'admin') history.push('/admin-dashboard');
+			else if (role === 'teacher') history.push('/teacher-dashboard');
+			else history.push('/student-dashboard');
 		} catch (err) {
 			if (err.response) {
 				setError(err.response.data);

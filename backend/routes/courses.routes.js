@@ -6,7 +6,9 @@ const mongoose = require('mongoose');
 const router = express.Router();
 
 router.get('/', auth, async (req, res) => {
-    const courses = await Course.find().select('-videos');
+    // Students see only approved courses; teachers/admins can see all
+    const filter = req.user.role === 'student' ? { status: 'approved' } : {};
+    const courses = await Course.find(filter).select('-videos');
     res.send(courses);
 });
 
@@ -23,7 +25,8 @@ router.post('/', auth, async (req, res) => {
 
     const course = new Course({
         ...req.body,
-        teacher: req.user._id
+        teacher: req.user._id,
+        status: 'pending'
     });
 
     try {
@@ -39,6 +42,7 @@ router.post('/:id/enroll', auth, async (req, res) => {
 
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).send('Course not found.');
+    if (course.status !== 'approved') return res.status(400).send('Course not available for enrollment.');
 
     if (course.enrolledStudents.includes(req.user._id)) {
         return res.status(400).send('You are already enrolled in this course.');
@@ -57,6 +61,7 @@ router.post('/:id/enroll', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).send('Course not found.');
+    if (req.user.role === 'student' && course.status !== 'approved') return res.status(403).send('Access denied.');
 
     const isEnrolled = course.enrolledStudents.includes(req.user._id);
     const isTeacher = course.teacher.toString() === req.user._id;

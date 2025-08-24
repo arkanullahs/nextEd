@@ -13,7 +13,7 @@ const Profile = () => {
         email: '',
         password: '',
     });
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    const apiUrl = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         fetchUserProfile();

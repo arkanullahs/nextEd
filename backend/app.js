@@ -1,8 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const configureCors = require('./configs/cors.config');
-const configureMiddleware = require('./configs/middleware.config');
+const cors = require('cors');
 const userRoutes = require("./routes/users.routes");
 const authRoutes = require("./routes/auth");
 const courseRoutes = require('./routes/courses.routes');
@@ -10,8 +9,8 @@ const courseRoutes = require('./routes/courses.routes');
 const app = express();
 
 // Middleware
-configureMiddleware(app);
-configureCors(app);
+app.use(express.json());
+app.use(cors());
 
 // Database connection
 const mongoOptions = {

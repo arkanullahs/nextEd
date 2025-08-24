@@ -21,6 +21,7 @@ router.post('/users/:id/approve', auth, requireAdmin, async (req, res) => {
     if (!user) return res.status(404).send('User not found');
     user.status = 'approved';
     user.approved = true;
+    user.rejectionReason = undefined;
     await user.save();
     res.send({ message: 'User approved' });
 });
@@ -30,6 +31,7 @@ router.post('/users/:id/reject', auth, requireAdmin, async (req, res) => {
     if (!user) return res.status(404).send('User not found');
     user.status = 'rejected';
     user.approved = false;
+    user.rejectionReason = req.body?.reason || 'Your account has been rejected.';
     await user.save();
     res.send({ message: 'User rejected' });
 });
@@ -57,7 +59,7 @@ router.post('/users/:id/reset-password', auth, requireAdmin, async (req, res) =>
 
 // Courses pending approval
 router.get('/courses/pending', auth, requireAdmin, async (req, res) => {
-    const courses = await Course.find({ status: 'pending' }).select('-videos');
+    const courses = await Course.find({ status: 'pending' });
     res.send(courses);
 });
 
@@ -65,6 +67,7 @@ router.post('/courses/:id/approve', auth, requireAdmin, async (req, res) => {
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).send('Course not found');
     course.status = 'approved';
+    course.rejectionReason = undefined;
     await course.save();
     res.send({ message: 'Course approved' });
 });
@@ -73,8 +76,19 @@ router.post('/courses/:id/reject', auth, requireAdmin, async (req, res) => {
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).send('Course not found');
     course.status = 'rejected';
+    course.rejectionReason = req.body?.reason || 'Course rejected.';
     await course.save();
     res.send({ message: 'Course rejected' });
+});
+
+// Admin update course
+router.put('/courses/:id', auth, requireAdmin, async (req, res) => {
+    const updates = { ...req.body };
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).send('Course not found');
+    Object.assign(course, updates);
+    await course.save();
+    res.send(course);
 });
 
 module.exports = router;

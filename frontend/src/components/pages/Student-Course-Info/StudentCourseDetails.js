@@ -9,6 +9,7 @@ const CourseDetails = () => {
     const { courseId } = useParams();
     const [course, setCourse] = useState(null);
     const [error, setError] = useState(null);
+    const [isPending, setIsPending] = useState(false);
     const [videoUrl, setVideoUrl] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [activeLesson, setActiveLesson] = useState(0);
@@ -22,6 +23,7 @@ const CourseDetails = () => {
                     headers: { 'x-auth-token': token }
                 });
                 setCourse(response.data);
+                setIsPending(response.data.status === 'pending');
                 if (response.data.videos.length > 0) {
                     setVideoUrl(response.data.videos[0]);
                 }
@@ -56,6 +58,11 @@ const CourseDetails = () => {
                     </Link>
                     <h1 className="cd-title">{course.title}</h1>
                     <p className="cd-description">{course.description}</p>
+                    {isPending && (
+                        <div className="cd-banner" role="status">
+                            This course is currently under edit/review. You can continue viewing the previous approved content.
+                        </div>
+                    )}
                     <div className="cd-info">
                         <span className="cd-info-item cd-duration"><FiClock /> {course.duration} hours</span>
                         <span className="cd-info-item cd-price"><FiDollarSign /> {course.price}</span>

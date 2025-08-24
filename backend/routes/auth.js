@@ -12,7 +12,7 @@ router.post('/', async (req, res) => {
 
 	// Enforce admin and user approval
 	if (user.role !== 'admin') {
-		if (user.status === 'rejected') return res.status(403).send('Your account was rejected.');
+		if (user.status === 'rejected') return res.status(403).send(user.rejectionReason || 'Your account was rejected.');
 		if (user.status !== 'approved') return res.status(403).send('Your account is pending approval.');
 	}
 

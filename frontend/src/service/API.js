@@ -29,12 +29,13 @@ export const getEnrolledCourses = () => api.get('/users/enrolledCourses');
 // Admin APIs
 export const getPendingUsers = () => api.get('/admin/users/pending');
 export const approveUser = (userId) => api.post(`/admin/users/${userId}/approve`);
-export const rejectUser = (userId) => api.post(`/admin/users/${userId}/reject`);
+export const rejectUser = (userId, reason) => api.post(`/admin/users/${userId}/reject`, { reason });
 export const updateAnyUser = (userId, data) => api.put(`/admin/users/${userId}`, data);
 export const resetUserPassword = (userId, newPassword) => api.post(`/admin/users/${userId}/reset-password`, { password: newPassword });
 
 export const getPendingCourses = () => api.get('/admin/courses/pending');
 export const approveCourse = (courseId) => api.post(`/admin/courses/${courseId}/approve`);
-export const rejectCourse = (courseId) => api.post(`/admin/courses/${courseId}/reject`);
+export const rejectCourse = (courseId, reason) => api.post(`/admin/courses/${courseId}/reject`, { reason });
+export const adminUpdateCourse = (courseId, data) => api.put(`/admin/courses/${courseId}`, data);
 
 export default api;

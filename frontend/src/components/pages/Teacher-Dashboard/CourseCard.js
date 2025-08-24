@@ -34,7 +34,7 @@ const CourseCard = ({ course, onUpdate, onDelete }) => {
     }
 
     return (
-        <div className="dashboard-card course-card">
+        <div className={`dashboard-card course-card ${course.status !== 'approved' ? 'course-pending' : ''}`} title={course.status === 'pending' ? 'Pending approval' : (course.status === 'rejected' ? (course.rejectionReason || 'Rejected') : '')}>
             <div className="course-card-image">
                 <img src={course.imageUrl} alt={course.title} />
                 <div className="course-card-actions">
@@ -49,6 +49,11 @@ const CourseCard = ({ course, onUpdate, onDelete }) => {
             <div className="course-card-content">
                 <h2 className="course-title">{course.title}</h2>
                 <p className="course-description">{course.description}</p>
+                {course.status === 'rejected' && (
+                    <div className="rejection-banner" role="alert">
+                        {course.rejectionReason || 'Rejected by admin.'}
+                    </div>
+                )}
                 <div className="course-meta">
                     <div className="meta-item"><MdPeople /> {course.__v} students</div>
                     <div className="meta-item"><MdAccessTime /> {course.duration} hours</div>
@@ -57,6 +62,8 @@ const CourseCard = ({ course, onUpdate, onDelete }) => {
                 <div className="course-tags">
                     <span className="course-category">{course.category}</span>
                     <span className="course-difficulty">{course.difficultyLevel}</span>
+                    {course.status === 'pending' && <span className="course-status pending">Pending</span>}
+                    {course.status === 'rejected' && <span className="course-status rejected" title={course.rejectionReason || 'Rejected'}>Rejected</span>}
                 </div>
             </div>
         </div>

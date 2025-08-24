@@ -9,12 +9,20 @@ router.post('/', async (req, res) => {
 	let user = await User.findOne({ email: req.body.email });
 	if (user) return res.status(400).send('User already registered.');
 
+	// Disallow public admin registration
+	if (req.body.role === 'admin') {
+		return res.status(403).send('Admin registration is not allowed.');
+	}
+
 	user = new User({
 		firstName: req.body.firstName,
 		lastName: req.body.lastName,
 		email: req.body.email,
 		password: req.body.password,
-		role: req.body.role
+		role: req.body.role,
+		governmentIdUrl: req.body.governmentIdUrl,
+		status: 'pending',
+		approved: false
 	});
 
 	const salt = await bcrypt.genSalt(10);

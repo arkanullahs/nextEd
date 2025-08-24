@@ -11,8 +11,9 @@ const courseSchema = new mongoose.Schema({
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     enrolledStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     whatYouWillLearn: [{ type: String }],
-    videos: [{ type: String }]
-});
+    videos: [{ type: String }],
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+}, { timestamps: true });
 
 const Course = mongoose.model('Course', courseSchema);
 

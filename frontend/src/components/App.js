@@ -13,6 +13,7 @@ import TeacherDashboard from './pages/Teacher-Dashboard/TeacherDashboard';
 import StudentDashboard from './pages/Students-Dashboard/StudentDashboard';
 import PrivateRoute from './PrivateRoute';
 import Profile from './pages/Profile/Profile.js'
+import AdminDashboard from './pages/Admin/AdminDashboard';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <PrivateRoute exact path="/courses" component={CoursesList} role="student" />
           <PrivateRoute path="/teacher-dashboard" component={TeacherDashboard} role="teacher" />
           <PrivateRoute path="/student-dashboard" component={StudentDashboard} role="student" />
+          <PrivateRoute path="/admin-dashboard" component={AdminDashboard} role="admin" />
           <PrivateRoute exact path="/courses/getOneCourse/:courseId" component={CourseDetails} role="student" />
           <PrivateRoute path="/profile" component={Profile} />
           <Redirect to="/" />

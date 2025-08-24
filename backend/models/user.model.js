@@ -6,9 +6,12 @@ const userSchema = new mongoose.Schema({
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['student', 'teacher'], required: true },
+    role: { type: String, enum: ['student', 'teacher', 'admin'], required: true },
+    approved: { type: Boolean, default: false },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    governmentIdUrl: { type: String },
     enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }]
-});
+}, { timestamps: true });
 
 // Update the token generation method
 userSchema.methods.generateAuthToken = function () {

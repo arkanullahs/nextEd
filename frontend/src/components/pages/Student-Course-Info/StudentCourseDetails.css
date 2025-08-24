@@ -172,6 +172,17 @@
     margin-bottom: 20px;
 }
 
+.cd-live-wrapper {
+    background-color: #fffcfc;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.cd-live-wrapper h3 {
+    margin-top: 0;
+}
+
 .cd-video-list {
     display: flex;
     flex-direction: column;

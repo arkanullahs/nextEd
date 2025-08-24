@@ -13,7 +13,11 @@ const courseSchema = new mongoose.Schema({
     whatYouWillLearn: { type: [String], default: [] },
     videos: { type: [String], default: [] },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-    rejectionReason: { type: String }
+    rejectionReason: { type: String },
+    liveRoomId: { type: String, default: null },
+    liveStartedAt: { type: Date, default: null },
+    liveSessionsCount: { type: Number, default: 0 },
+    lastLiveEndedAt: { type: Date, default: null }
 }, { timestamps: true });
 
 const Course = mongoose.model('Course', courseSchema);

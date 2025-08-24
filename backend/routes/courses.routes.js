@@ -123,6 +123,35 @@ router.put('/:id', auth, async (req, res) => {
     }
 });
 
+// Start a live class (teacher only, owns course)
+router.post('/:id/live/start', auth, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).send('Access denied.');
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).send('Course not found.');
+    if (course.teacher.toString() !== req.user._id) return res.status(403).send('Not your course.');
+    const timestamp = Date.now();
+    course.liveRoomId = `live_${course._id}_${timestamp}`;
+    course.liveStartedAt = new Date(timestamp);
+    await course.save();
+    res.send({ liveRoomId: course.liveRoomId });
+});
+
+// Stop a live class (teacher only, owns course)
+router.post('/:id/live/stop', auth, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).send('Access denied.');
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).send('Course not found.');
+    if (course.teacher.toString() !== req.user._id) return res.status(403).send('Not your course.');
+    if (course.liveRoomId) {
+        course.liveSessionsCount = (course.liveSessionsCount || 0) + 1;
+    }
+    course.liveRoomId = null;
+    course.lastLiveEndedAt = new Date();
+    course.liveStartedAt = null;
+    await course.save();
+    res.send({ message: 'Live class ended' });
+});
+
 router.get('/getOneCourse/:id', auth, async (req, res) => {
     // Check if the user is a student
     if (req.user.role !== 'student') {

@@ -43,15 +43,15 @@ const StudentDashboard = () => {
         }
     };
 
-    const handleEnroll = async (courseId) => {
+    const handleEnroll = async (courseId, options) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${apiUrl}/courses/${courseId}/enroll`, {}, {
+            await axios.post(`${apiUrl}/courses/${courseId}/enroll`, options || {}, {
                 headers: { 'x-auth-token': token }
             });
             fetchEnrolledCourses();
         } catch (err) {
-            setError('Failed to enroll in course');
+            setError('Failed to update enrollment');
         }
     };
 

@@ -45,6 +45,17 @@ router.post('/:id/enroll', auth, async (req, res) => {
     if (!course) return res.status(404).send('Course not found.');
     if (course.status !== 'approved') return res.status(400).send('Course not available for enrollment.');
 
+    // Unenroll if requested
+    if (req.body && req.body.unenroll === true) {
+        course.enrolledStudents = course.enrolledStudents.filter(s => s.toString() !== req.user._id);
+        await course.save();
+        const user = await User.findById(req.user._id);
+        user.enrolledCourses = user.enrolledCourses.filter(c => c.toString() !== course._id.toString());
+        await user.save();
+        await Enrollment.deleteOne({ user: req.user._id, course: course._id });
+        return res.send('Unenrolled successfully.');
+    }
+
     if (course.enrolledStudents.includes(req.user._id)) {
         return res.status(400).send('You are already enrolled in this course.');
     }

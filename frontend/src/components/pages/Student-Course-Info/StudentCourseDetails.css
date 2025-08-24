@@ -2,6 +2,12 @@
     background-color: #f8f2e8;
 }
 
+.cd-back-out {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 90px 20px 0;
+}
+
 .cd-course-details {
     max-width: 1200px;
     margin: 0 auto;
@@ -19,6 +25,7 @@
     text-align: center;
     margin-bottom: 40px;
     border-radius: 8px;
+    position: relative;
 }
 
 .cd-back-link {
@@ -45,6 +52,78 @@
     color: #2c3e50;
     margin-bottom: 16px;
     font-weight: 700;
+}
+.cd-header-top {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+}
+.cd-title {
+    grid-column: 2 / 3;
+    justify-self: center;
+}
+
+.cd-unenroll-btn {
+    grid-column: 3 / 4;
+    justify-self: end;
+    background: #ffe6e6;
+    color: #b91c1c;
+    border: 2px solid #ffc2c2;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.cd-unenroll-btn:hover {
+    background: #ffd3d3;
+}
+
+/* Unenroll Modal */
+.cd-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.cd-modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    width: min(520px, 92vw);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.cd-modal h3 {
+    margin: 0 0 12px;
+}
+.cd-modal p {
+    margin: 0 0 16px;
+}
+.cd-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.cd-btn-secondary {
+    background: #eef2f7;
+    color: #1f2937;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.cd-btn-danger {
+    background: #ffe6e6;
+    color: #b91c1c;
+    border: 2px solid #ffc2c2;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .cd-description {

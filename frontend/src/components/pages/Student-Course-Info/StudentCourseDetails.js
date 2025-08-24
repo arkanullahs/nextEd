@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import ReactPlayer from 'react-player';
@@ -17,6 +17,10 @@ const CourseDetails = () => {
     const [liveRoomId, setLiveRoomId] = useState(null);
     const [unenrollOpen, setUnenrollOpen] = useState(false);
     const [confirmStep, setConfirmStep] = useState(1);
+    const [userName, setUserName] = useState('');
+    const [userId, setUserId] = useState('');
+    const [seenVideos, setSeenVideos] = useState(new Set());
+    const certificateRef = useRef(null);
     const handleUnenroll = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -42,6 +46,15 @@ const CourseDetails = () => {
                 if (response.data.videos.length > 0) {
                     setVideoUrl(response.data.videos[0]);
                 }
+                // load seen videos from localStorage (per user per course)
+                try {
+                    const profile = await axios.get(`${apiUrl}/users/profile`, { headers: { 'x-auth-token': token } });
+                    const name = `${profile.data.firstName} ${profile.data.lastName}`;
+                    setUserName(name);
+                    setUserId(profile.data._id);
+                    const stored = localStorage.getItem(`seen:${profile.data._id}:${response.data._id}`);
+                    if (stored) setSeenVideos(new Set(JSON.parse(stored)));
+                } catch (_) { /* ignore */ }
                 setIsLoading(false);
             } catch (err) {
                 console.error('Error fetching course details:', err);
@@ -63,6 +76,66 @@ const CourseDetails = () => {
 
     if (error) return <div className="cd-error">{error}</div>;
     if (!course) return null;
+
+    const allVideosSeen = course.videos && course.videos.length > 0 && seenVideos.size >= course.videos.length;
+
+    const markVideoSeen = (index) => {
+        if (!userId) return;
+        if (!seenVideos.has(index)) {
+            const next = new Set(seenVideos);
+            next.add(index);
+            setSeenVideos(next);
+            localStorage.setItem(`seen:${userId}:${course._id}`, JSON.stringify(Array.from(next)));
+        }
+    };
+
+    const handleVideoProgress = (state) => {
+        // state.played is 0..1
+        if (state.played >= 0.9) {
+            markVideoSeen(activeLesson);
+        }
+    };
+
+    const handleVideoEnded = () => {
+        markVideoSeen(activeLesson);
+    };
+
+    const loadScript = (src) => new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) return resolve();
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.body.appendChild(s);
+    });
+
+    const generateCertificate = async () => {
+        try {
+            // Preload background (hosted in public/) to avoid CORS-tainted canvas
+            try {
+                const bg = new Image();
+                bg.crossOrigin = 'anonymous';
+                bg.src = `${process.env.PUBLIC_URL}/certificate-bg.png`;
+                await new Promise((resolve) => { bg.onload = resolve; bg.onerror = resolve; });
+            } catch (_) { /* ignore */ }
+
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            const html2canvas = window.html2canvas;
+            const { jsPDF } = window.jspdf;
+            const node = certificateRef.current;
+            const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: null });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('landscape', 'pt', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+            const safeTitle = (course.title || 'certificate').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+            pdf.save(`${safeTitle}_certificate.pdf`);
+        } catch (e) {
+            alert('Failed to generate certificate. Please try again.');
+        }
+    };
 
     return (
         <main className='cd-main'>
@@ -121,8 +194,15 @@ const CourseDetails = () => {
                                         width='100%'
                                         height='400px'
                                         className="cd-react-player"
+                                        onProgress={handleVideoProgress}
+                                        onEnded={handleVideoEnded}
                                     />
                                 )}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                                <button disabled={!allVideosSeen} onClick={generateCertificate} className="cd-cert-btn">
+                                    Download Certificate
+                                </button>
                             </div>
                             <div className="cd-video-list">
                                 {course.videos.map((video, index) => (
@@ -135,7 +215,7 @@ const CourseDetails = () => {
                                         }}
                                     >
                                         <span className="cd-lesson-number">{index + 1}</span>
-                                        <span className="cd-lesson-title">Lesson {index + 1}</span>
+                                        <span className="cd-lesson-title">Lesson {index + 1}{seenVideos.has(index) ? ' • Seen' : ''}</span>
                                     </button>
                                 ))}
                             </div>
@@ -204,6 +284,21 @@ const CourseDetails = () => {
                     </div>
                 </div>
             )}
+
+            {/* Hidden certificate template */}
+            <div style={{ position: 'absolute', left: -99999, top: 0 }}>
+                <div ref={certificateRef} className="cd-cert-template">
+                    <div className="cd-cert-border" style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/certificate-bg.png)` }}>
+                        <h2>Certificate of Completion</h2>
+                        <p>This certifies that</p>
+                        <h1>{userName || 'Student'}</h1>
+                        <p>has successfully completed the course</p>
+                        <h3>{course.title}</h3>
+                        <p className="cd-cert-date">Date: {new Date().toLocaleDateString()}</p>
+                        <div className="cd-cert-sign">NextEd</div>
+                    </div>
+                </div>
+            </div>
         </main>
     );
 };

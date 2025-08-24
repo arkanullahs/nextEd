@@ -16,7 +16,7 @@ const Navigation = () => {
     const [userName, setUserName] = useState('');
     const history = useHistory();
     const location = useLocation();
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    const apiUrl = process.env.REACT_APP_API_URL;
 
     const handleScroll = () => {
         if (window.scrollY > 50) {
@@ -53,6 +53,10 @@ const Navigation = () => {
                         headers: { 'x-auth-token': token }
                     });
                     setUserName(`${response.data.firstName} ${response.data.lastName}`);
+                    // Determine free/paid label
+                    const enrolled = await axios.get(`${apiUrl}/users/enrolledCourses`, { headers: { 'x-auth-token': token } });
+                    const anyPaid = (enrolled.data || []).some(c => c.isPaid);
+                    setUserRole(anyPaid ? 'Paid User' : 'Free User');
                 } catch (error) {
                     console.error('Error fetching user profile:', error);
                 }
@@ -98,7 +102,7 @@ const Navigation = () => {
                 <Nav className="ml-auto">
                     {isLoggedIn ? (
                         <>
-                            {userRole === 'teacher' ? (
+                            {localStorage.getItem('userRole') === 'teacher' ? (
                                 <Link to="/teacher-dashboard" className="nav-link">
                                     <FontAwesomeIcon icon={faHome} className="nav-icon" />
                                     <span className="nav-text">Dashboard</span>
@@ -115,7 +119,7 @@ const Navigation = () => {
                             </Nav.Link>
                             <Link className="nav-link" to="/profile">
                                 <FontAwesomeIcon icon={faUser} className="nav-icon" />
-                                <span className="nav-text">{userName || 'Profile'}</span>
+                                <span className="nav-text">{userName || 'Profile'} {localStorage.getItem('userRole') === 'student' && userRole ? `• ${userRole}` : ''}</span>
                             </Link>
                         </>
                     ) : (

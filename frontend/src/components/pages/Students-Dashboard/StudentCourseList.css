@@ -58,7 +58,8 @@
 
 .cl-course-category,
 .cl-course-difficulty,
-.cl-course-duration {
+.cl-course-duration,
+.cl-course-paidpill {
     padding: 5px 10px;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -94,6 +95,11 @@
 
 .cl-course-duration svg {
     margin-right: 4px;
+}
+
+.cl-course-paidpill {
+    background-color: #e8e8ff;
+    color: #3730a3;
 }
 
 .cl-course-details {

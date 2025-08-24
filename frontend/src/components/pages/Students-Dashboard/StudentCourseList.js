@@ -19,6 +19,9 @@ const CourseList = ({ courses, onEnroll, enrolledCourses, isEnrolledList }) => {
                             <span className="cl-course-difficulty">
                                 <FiAward /> {course.difficultyLevel}
                             </span>
+                            {typeof course.isPaid !== 'undefined' && (
+                                <span className="cl-course-paidpill">{course.isPaid ? 'Paid' : 'Free'}</span>
+                            )}
                         </div>
                         <div className="cl-course-details">
                             <div className="cl-course-duration-price">

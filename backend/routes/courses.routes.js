@@ -4,6 +4,7 @@ const Course = require('../models/course.model');
 const User = require('../models/user.model');
 const mongoose = require('mongoose');
 const router = express.Router();
+const Enrollment = require('../models/enrollment.model');
 
 router.get('/', auth, async (req, res) => {
     // Students see only approved courses; teachers/admins can see all
@@ -44,16 +45,39 @@ router.post('/:id/enroll', auth, async (req, res) => {
     if (!course) return res.status(404).send('Course not found.');
     if (course.status !== 'approved') return res.status(400).send('Course not available for enrollment.');
 
+    // Unenroll if requested
+    if (req.body && req.body.unenroll === true) {
+        course.enrolledStudents = course.enrolledStudents.filter(s => s.toString() !== req.user._id);
+        await course.save();
+        const user = await User.findById(req.user._id);
+        user.enrolledCourses = user.enrolledCourses.filter(c => c.toString() !== course._id.toString());
+        await user.save();
+        await Enrollment.deleteOne({ user: req.user._id, course: course._id });
+        return res.send('Unenrolled successfully.');
+    }
+
     if (course.enrolledStudents.includes(req.user._id)) {
         return res.status(400).send('You are already enrolled in this course.');
     }
 
-    course.enrolledStudents.push(req.user._id);
-    await course.save();
+    // Create or ensure enrollment with isPaid flag
+    const isPaid = (course.price || 0) > 0;
+    try {
+        await Enrollment.create({ user: req.user._id, course: course._id, isPaid });
+    } catch (e) {
+        // ignore duplicate error
+    }
+
+    if (!course.enrolledStudents.includes(req.user._id)) {
+        course.enrolledStudents.push(req.user._id);
+        await course.save();
+    }
 
     const user = await User.findById(req.user._id);
-    user.enrolledCourses.push(course._id);
-    await user.save();
+    if (!user.enrolledCourses.includes(course._id)) {
+        user.enrolledCourses.push(course._id);
+        await user.save();
+    }
 
     res.send('Enrolled successfully.');
 });

@@ -15,6 +15,19 @@ const CourseDetails = () => {
     const [activeLesson, setActiveLesson] = useState(0);
     const apiUrl = process.env.REACT_APP_API_URL;
     const [liveRoomId, setLiveRoomId] = useState(null);
+    const [unenrollOpen, setUnenrollOpen] = useState(false);
+    const [confirmStep, setConfirmStep] = useState(1);
+    const handleUnenroll = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${apiUrl}/courses/${courseId}/enroll`, { unenroll: true }, {
+                headers: { 'x-auth-token': token }
+            });
+            window.location.href = '/student-dashboard';
+        } catch (e) {
+            setError('Failed to unenroll.');
+        }
+    };
 
     useEffect(() => {
         const fetchCourseDetails = async () => {
@@ -53,12 +66,17 @@ const CourseDetails = () => {
 
     return (
         <main className='cd-main'>
+            <div className="cd-back-out">
+                <Link to="/student-dashboard" className="cd-back-link">
+                    <FiArrowLeft /> Back to Courses
+                </Link>
+            </div>
             <div className="cd-course-details">
                 <div className="cd-header">
-                    <Link to="/student-dashboard" className="cd-back-link">
-                        <FiArrowLeft /> Back to Courses
-                    </Link>
-                    <h1 className="cd-title">{course.title}</h1>
+                    <div className="cd-header-top">
+                        <h1 className="cd-title">{course.title}</h1>
+                        <button onClick={() => { setConfirmStep(1); setUnenrollOpen(true); }} className="cd-unenroll-btn">Unenroll</button>
+                    </div>
                     <p className="cd-description">{course.description}</p>
                     {isPending && (
                         <div className="cd-banner" role="status">
@@ -160,6 +178,32 @@ const CourseDetails = () => {
                     </div>
                 </div>
             </div>
+
+            {unenrollOpen && (
+                <div className="cd-modal-overlay">
+                    <div className="cd-modal">
+                        <h3>Unenroll from this course</h3>
+                        {confirmStep === 1 && (
+                            <>
+                                <p>Are you sure you want to unenroll? You may lose access to course content.</p>
+                                <div className="cd-modal-actions">
+                                    <button className="cd-btn-secondary" onClick={() => setUnenrollOpen(false)}>Cancel</button>
+                                    <button className="cd-btn-danger" onClick={() => setConfirmStep(2)}>Yes, continue</button>
+                                </div>
+                            </>
+                        )}
+                        {confirmStep === 2 && (
+                            <>
+                                <p>Please confirm again to unenroll. This action cannot be undone.</p>
+                                <div className="cd-modal-actions">
+                                    <button className="cd-btn-secondary" onClick={() => setUnenrollOpen(false)}>Cancel</button>
+                                    <button className="cd-btn-danger" onClick={handleUnenroll}>Confirm Unenroll</button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </main>
     );
 };

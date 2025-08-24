@@ -67,12 +67,21 @@ const StudentDashboard = () => {
 
     const availableCourses = courses.filter(course => !enrolledCourses.some(ec => ec._id === course._id));
 
+    const paidEnrolled = enrolledCourses.filter(c => c.isPaid);
+    const freeEnrolled = enrolledCourses.filter(c => !c.isPaid);
+
     return (
         <main className='sd-main-container'>
             <div className="sd-container">
-                <h2 className="sd-subtitle">Enrolled Courses</h2>
+                <h2 className="sd-subtitle">Your Free Courses</h2>
                 <CourseList
-                    courses={enrolledCourses}
+                    courses={freeEnrolled}
+                    enrolledCourses={enrolledCourses}
+                    isEnrolledList={true}
+                />
+                <h2 className="sd-subtitle" style={{ marginTop: 24 }}>Your Paid Courses</h2>
+                <CourseList
+                    courses={paidEnrolled}
                     enrolledCourses={enrolledCourses}
                     isEnrolledList={true}
                 />

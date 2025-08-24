@@ -14,9 +14,11 @@ const Profile = () => {
         password: '',
     });
     const apiUrl = process.env.REACT_APP_API_URL;
+    const [userTier, setUserTier] = useState('');
 
     useEffect(() => {
         fetchUserProfile();
+        fetchUserTier();
     }, []);
 
     const fetchUserProfile = async () => {
@@ -53,6 +55,18 @@ const Profile = () => {
         }
     };
 
+    const fetchUserTier = async () => {
+        try {
+            const res = await axios.get(`${apiUrl}/users/enrolledCourses`, {
+                headers: { 'x-auth-token': localStorage.getItem('token') }
+            });
+            const anyPaid = (res.data || []).some(c => c.isPaid);
+            setUserTier(anyPaid ? 'Paid User' : 'Free User');
+        } catch (e) {
+            // ignore
+        }
+    };
+
     if (!user) {
         return <div className="loading">Loading...</div>;
     }
@@ -67,6 +81,9 @@ const Profile = () => {
             >
                 <h1>{user.firstName} {user.lastName}</h1>
                 <div className="role-pill">{user.role}</div>
+                {user.role === 'student' && (
+                    <div className="role-pill" style={{ marginTop: 8 }}>{userTier}</div>
+                )}
             </motion.div>
             <motion.div
                 className="profile-content "

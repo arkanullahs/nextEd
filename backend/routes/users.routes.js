@@ -2,6 +2,7 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const User = require('../models/user.model');
 const bcrypt = require('bcrypt');
+const Enrollment = require('../models/enrollment.model');
 
 const router = express.Router();
 
@@ -46,7 +47,10 @@ router.get('/enrolledCourses', auth, async (req, res) => {
 		if (!user) {
 			return res.status(404).send('User not found');
 		}
-		res.send(user.enrolledCourses);
+		const enrollments = await Enrollment.find({ user: req.user._id });
+		const courseIdToPaid = new Map(enrollments.map(e => [e.course.toString(), e.isPaid]));
+		const result = user.enrolledCourses.map(c => ({ ...c.toObject(), isPaid: !!courseIdToPaid.get(c._id.toString()) }));
+		res.send(result);
 	} catch (error) {
 		res.status(500).send('Error fetching enrolled courses');
 	}

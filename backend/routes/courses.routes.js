@@ -4,6 +4,7 @@ const Course = require('../models/course.model');
 const User = require('../models/user.model');
 const mongoose = require('mongoose');
 const router = express.Router();
+const Enrollment = require('../models/enrollment.model');
 
 router.get('/', auth, async (req, res) => {
     // Students see only approved courses; teachers/admins can see all
@@ -48,12 +49,24 @@ router.post('/:id/enroll', auth, async (req, res) => {
         return res.status(400).send('You are already enrolled in this course.');
     }
 
-    course.enrolledStudents.push(req.user._id);
-    await course.save();
+    // Create or ensure enrollment with isPaid flag
+    const isPaid = (course.price || 0) > 0;
+    try {
+        await Enrollment.create({ user: req.user._id, course: course._id, isPaid });
+    } catch (e) {
+        // ignore duplicate error
+    }
+
+    if (!course.enrolledStudents.includes(req.user._id)) {
+        course.enrolledStudents.push(req.user._id);
+        await course.save();
+    }
 
     const user = await User.findById(req.user._id);
-    user.enrolledCourses.push(course._id);
-    await user.save();
+    if (!user.enrolledCourses.includes(course._id)) {
+        user.enrolledCourses.push(course._id);
+        await user.save();
+    }
 
     res.send('Enrolled successfully.');
 });

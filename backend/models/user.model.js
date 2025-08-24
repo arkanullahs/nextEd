@@ -6,13 +6,9 @@ const userSchema = new mongoose.Schema({
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['student', 'teacher', 'admin'], required: true },
-    // For admin approval of signups
-    isApproved: { type: Boolean, default: false },
-    // ID provided by user for verification (student/teacher)
-    idNumber: { type: String },
+    role: { type: String, enum: ['student', 'teacher'], required: true },
     enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }]
-}, { timestamps: true });
+});
 
 // Update the token generation method
 userSchema.methods.generateAuthToken = function () {

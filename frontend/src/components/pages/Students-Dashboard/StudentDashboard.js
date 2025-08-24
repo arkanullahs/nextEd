@@ -65,9 +65,7 @@ const StudentDashboard = () => {
 
     if (error) return <div className="sd-error">{error}</div>;
 
-    const availableCourses = courses
-        .filter(course => course.isApproved)
-        .filter(course => !enrolledCourses.some(ec => ec._id === course._id));
+    const availableCourses = courses.filter(course => !enrolledCourses.some(ec => ec._id === course._id));
 
     return (
         <main className='sd-main-container'>

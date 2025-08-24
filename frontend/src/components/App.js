@@ -12,7 +12,6 @@ import Signup from "./pages/Signup/index";
 import TeacherDashboard from './pages/Teacher-Dashboard/TeacherDashboard';
 import StudentDashboard from './pages/Students-Dashboard/StudentDashboard';
 import PrivateRoute from './PrivateRoute';
-import AdminDashboard from './pages/Admin/AdminDashboard';
 import Profile from './pages/Profile/Profile.js'
 
 function App() {
@@ -27,7 +26,6 @@ function App() {
           <Route exact path="/login" component={Login} />
           <PrivateRoute exact path="/courses" component={CoursesList} role="student" />
           <PrivateRoute path="/teacher-dashboard" component={TeacherDashboard} role="teacher" />
-          <PrivateRoute path="/admin" component={AdminDashboard} role="admin" />
           <PrivateRoute path="/student-dashboard" component={StudentDashboard} role="student" />
           <PrivateRoute exact path="/courses/getOneCourse/:courseId" component={CourseDetails} role="student" />
           <PrivateRoute path="/profile" component={Profile} />

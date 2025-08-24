@@ -5,7 +5,6 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     max-width: 1000px;
     margin: 0 auto;
-    padding-bottom: 120px; /* ensure content not hidden behind sticky footer */
 }
 
 .teacher-dashboard .form-header {
@@ -168,8 +167,5 @@
 @media (max-width: 768px) {
     .teacher-dashboard .form-body {
         flex-direction: column;
-    }
-    .teacher-dashboard .image-preview {
-        height: 200px;
     }
 }

@@ -38,4 +38,8 @@ export const approveCourse = (courseId) => api.post(`/admin/courses/${courseId}/
 export const rejectCourse = (courseId, reason) => api.post(`/admin/courses/${courseId}/reject`, { reason });
 export const adminUpdateCourse = (courseId, data) => api.put(`/admin/courses/${courseId}`, data);
 
+// Live class
+export const startLiveClass = (courseId) => api.post(`/courses/${courseId}/live/start`);
+export const stopLiveClass = (courseId) => api.post(`/courses/${courseId}/live/stop`);
+
 export default api;

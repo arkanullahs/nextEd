@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MdEdit, MdDelete, MdPeople, MdAccessTime, MdAttachMoney } from 'react-icons/md';
 import CourseForm from '../Teacher-Course-Form/TeacherCourseForm';
+import { startLiveClass, stopLiveClass } from '../../../service/API';
 import './CourseCard.css';
 
 const CourseCard = ({ course, onUpdate, onDelete }) => {
@@ -19,6 +20,24 @@ const CourseCard = ({ course, onUpdate, onDelete }) => {
         if (window.confirm('Are you sure you want to delete this course?')) {
             onDelete(course._id);
         }
+    };
+
+    const handleStartLive = async () => {
+        try {
+            const res = await startLiveClass(course._id);
+            const roomId = res.data?.liveRoomId;
+            if (roomId) {
+                window.open(`https://meet.jit.si/${roomId}`, '_blank', 'noopener,noreferrer');
+            }
+            window.location.reload();
+        } catch (e) { alert('Failed to start live class'); }
+    };
+
+    const handleStopLive = async () => {
+        try {
+            await stopLiveClass(course._id);
+            window.location.reload();
+        } catch (e) { alert('Failed to stop live class'); }
     };
 
     if (isEditing) {
@@ -49,6 +68,9 @@ const CourseCard = ({ course, onUpdate, onDelete }) => {
             <div className="course-card-content">
                 <h2 className="course-title">{course.title}</h2>
                 <p className="course-description">{course.description}</p>
+                {course.liveRoomId && (
+                    <div className="live-indicator">Live class is ON</div>
+                )}
                 {course.status === 'rejected' && (
                     <div className="rejection-banner" role="alert">
                         {course.rejectionReason || 'Rejected by admin.'}
@@ -64,6 +86,13 @@ const CourseCard = ({ course, onUpdate, onDelete }) => {
                     <span className="course-difficulty">{course.difficultyLevel}</span>
                     {course.status === 'pending' && <span className="course-status pending">Pending</span>}
                     {course.status === 'rejected' && <span className="course-status rejected" title={course.rejectionReason || 'Rejected'}>Rejected</span>}
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                    {!course.liveRoomId ? (
+                        <button onClick={handleStartLive} className="edit-btn">Start Live Class</button>
+                    ) : (
+                        <button onClick={handleStopLive} className="delete-btn">End Live Class</button>
+                    )}
                 </div>
             </div>
         </div>

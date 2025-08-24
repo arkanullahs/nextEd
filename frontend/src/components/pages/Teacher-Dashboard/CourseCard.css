@@ -112,6 +112,17 @@
     padding: 20px;
 }
 
+.live-indicator {
+    display: inline-block;
+    background: #e6ffed;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
 .course-title {
     margin: 0 0 15px 0;
     font-size: 1.4rem;

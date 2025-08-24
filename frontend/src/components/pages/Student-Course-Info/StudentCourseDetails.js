@@ -14,6 +14,7 @@ const CourseDetails = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [activeLesson, setActiveLesson] = useState(0);
     const apiUrl = process.env.REACT_APP_API_URL;
+    const [liveRoomId, setLiveRoomId] = useState(null);
 
     useEffect(() => {
         const fetchCourseDetails = async () => {
@@ -24,6 +25,7 @@ const CourseDetails = () => {
                 });
                 setCourse(response.data);
                 setIsPending(response.data.status === 'pending');
+                setLiveRoomId(response.data.liveRoomId || null);
                 if (response.data.videos.length > 0) {
                     setVideoUrl(response.data.videos[0]);
                 }
@@ -119,6 +121,41 @@ const CourseDetails = () => {
                                     </button>
                                 ))}
                             </div>
+                            {liveRoomId && (
+                                <div className="cd-live-wrapper">
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <h3 style={{ margin: 0 }}>Live Class</h3>
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                            <button onClick={() => {
+                                                const iframe = document.querySelector('#jitsi-live');
+                                                if (iframe && iframe.requestFullscreen) iframe.requestFullscreen();
+                                            }}>Fullscreen</button>
+                                            <button onClick={() => window.open(`https://meet.jit.si/${liveRoomId}`, '_blank', 'noopener,noreferrer')}>Open in tab</button>
+                                        </div>
+                                    </div>
+                                    <div className="cd-live-iframe">
+                                        <iframe
+                                            id="jitsi-live"
+                                            title="live-class"
+                                            src={`https://meet.jit.si/${liveRoomId}`}
+                                            allow="camera; microphone; fullscreen; display-capture; autoplay"
+                                            style={{ width: '100%', height: 500, border: 0, borderRadius: 8 }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            {!liveRoomId && (
+                                <div className="cd-live-wrapper" style={{ background: '#f9fafb' }}>
+                                    <h3 style={{ marginTop: 0 }}>No live class currently</h3>
+                                    <p style={{ marginBottom: 0 }}>
+                                        {course.liveSessionsCount > 0 ? (
+                                            <>Previous live classes: {course.liveSessionsCount}{course.lastLiveEndedAt ? ` (last ended ${new Date(course.lastLiveEndedAt).toLocaleString()})` : ''}</>
+                                        ) : (
+                                            'No live classes have been held yet.'
+                                        )}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

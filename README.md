@@ -211,6 +211,6 @@ npm run build    # production build
 
 ## License
 
-MIT (or add your preferred license).
+MIT
 
 
